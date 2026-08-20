@@ -1,13 +1,13 @@
 import apiService from '../api.service'
 
-const BASE_URL = '/sales'
+const B = '/sales'
 
 const SalesService = {
-  getAll: (params) => apiService.get(BASE_URL, params),
-  getById: (id) => apiService.get(`${BASE_URL}/${id}`),
-  create: (payload) => apiService.post(BASE_URL, payload),
-  update: (id, payload) => apiService.put(`${BASE_URL}/${id}`, payload),
-  remove: (id) => apiService.delete(`${BASE_URL}/${id}`),
+  getDashboard:   ()         => apiService.get(`${B}/dashboard`),
+  getQuotations:  ()         => apiService.get(`${B}/quotations`),
+  getOrders:      ()         => apiService.get(`${B}/orders`),
+  getInvoices:    ()         => apiService.get(`${B}/invoices`),
+  getAnalytics:   ()         => apiService.get(`${B}/analytics`),
 }
 
 export default SalesService

@@ -7,6 +7,7 @@ const storageService = {
   clearToken: () => localStorage.removeItem(TOKEN_KEY),
   getUser: () => JSON.parse(localStorage.getItem(USER_KEY) || 'null'),
   setUser: (user) => localStorage.setItem(USER_KEY, JSON.stringify(user)),
+  clearUser: () => localStorage.removeItem(USER_KEY),
   clear: () => localStorage.clear(),
 }
 

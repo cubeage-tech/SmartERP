@@ -6,12 +6,12 @@ import Breadcrumbs from '../components/layout/Breadcrumbs'
 
 const DashboardLayout = () => {
   return (
-    <div className="dashboard-layout">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="dashboard-main">
+      <div className="flex-1 min-w-0 flex flex-col">
         <Header />
-        <Breadcrumbs />
-        <div className="dashboard-content">
+        {/* <Breadcrumbs /> */}
+        <div className="flex-1">
           <Outlet />
         </div>
       </div>

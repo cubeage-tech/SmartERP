@@ -1,0 +1,16 @@
+package com.cubeage.erp.documents.repository;
+
+import com.cubeage.erp.documents.entity.DocumentVersion;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface DocumentVersionRepository extends JpaRepository<DocumentVersion, Long> {
+
+    List<DocumentVersion> findByDocument_IdOrderByVersionNumberDesc(Long documentId);
+
+    Optional<DocumentVersion> findByIdAndDocument_Id(Long id, Long documentId);
+
+    Optional<DocumentVersion> findTopByDocument_IdOrderByVersionNumberDesc(Long documentId);
+}

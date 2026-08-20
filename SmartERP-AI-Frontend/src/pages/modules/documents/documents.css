@@ -1,0 +1,649 @@
+.documents-page {
+    min-height: 100vh;
+    background: #f7f6f1;
+    padding: 32px 28px 60px;
+    color: #101510;
+    font-family: "Courier New", monospace;
+}
+
+.doc-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 34px;
+}
+
+.doc-title-row h1 {
+    margin: 0;
+    font-family: Georgia, serif;
+    font-size: 36px;
+    font-weight: 500;
+}
+
+.doc-title-row p {
+    color: #8d9291;
+    font-size: 12px;
+}
+
+.doc-eyebrow {
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: #a3a6a6;
+    margin-bottom: 12px;
+}
+
+.doc-header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.doc-btn {
+    padding: 12px 18px;
+    border-radius: 14px;
+    border: 1px solid #e4e1d8;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.doc-btn-dark {
+    background: #101510;
+    color: white;
+    border-color: #101510;
+}
+
+.doc-btn-light {
+    background: white;
+}
+
+.doc-ai-banner {
+    background: #111610;
+    border-radius: 20px;
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.doc-ai-content {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.doc-ai-content p {
+    color: #71766f;
+    margin: 6px 0 0;
+    font-size: 12px;
+}
+
+.doc-ai-icon {
+    width: 45px;
+    height: 45px;
+    background: #292f27;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+}
+
+.doc-active {
+    color: #a0b883;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.doc-active span {
+    width: 9px;
+    height: 9px;
+    background: #91a576;
+    border-radius: 50%;
+}
+
+.doc-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.doc-kpi-card {
+    background: white;
+    border: 1px solid #e4e1d8;
+    border-radius: 20px;
+    padding: 24px 20px;
+}
+
+.doc-kpi-value {
+    font-family: Georgia, serif;
+    font-size: 34px;
+}
+
+.doc-kpi-label {
+    margin-top: 8px;
+    color: #a7aaaa;
+    font-size: 11px;
+    letter-spacing: 1px;
+}
+
+.doc-kpi-helper {
+    margin-top: 8px;
+    font-size: 12px;
+}
+
+.doc-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 26px;
+}
+
+.doc-tabs button {
+    border: none;
+    background: transparent;
+    border-radius: 12px;
+    padding: 12px 20px;
+    color: #9da1a0;
+    font-family: inherit;
+}
+
+.doc-tabs button.active {
+    background: white;
+    border: 1px solid #e4e1d8;
+    color: #101510;
+}
+
+.doc-filter-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.doc-search {
+    min-width: 520px;
+    background: white;
+    border: 1px solid #e4e1d8;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+}
+
+.doc-search input {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    outline: none;
+    font-family: inherit;
+}
+
+.doc-filter-buttons {
+    display: flex;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.doc-filter-buttons button {
+    border: 1px solid #e4e1d8;
+    background: transparent;
+    border-radius: 14px;
+    padding: 13px 16px;
+    color: #a5a9a8;
+    cursor: pointer;
+}
+
+.doc-filter-buttons button.active {
+    background: #101510;
+    border-color: #101510;
+    color: white;
+}
+
+.doc-list {
+    display: grid;
+    gap: 11px;
+}
+
+.doc-row {
+    background: white;
+    border: 1px solid #e4e1d8;
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.doc-row-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.doc-file-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    background: #f6f4ef;
+    border: 1px solid #e4e1d8;
+    display: grid;
+    place-items: center;
+}
+
+.doc-row h3 {
+    font-family: Georgia, serif;
+    font-size: 19px;
+    font-weight: 500;
+    margin: 0 0 8px;
+}
+
+.doc-meta {
+    display: flex;
+    gap: 9px;
+    flex-wrap: wrap;
+    color: #a0a4a4;
+    font-size: 11px;
+}
+
+.doc-tag {
+    background: #f6f4ef;
+    border: 1px solid #e4e1d8;
+    border-radius: 5px;
+    padding: 3px 7px;
+    font-size: 9px;
+}
+
+.doc-row-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.ocr-complete {
+    color: #a6b895;
+    font-size: 10px;
+}
+
+.ocr-processing {
+    color: #806f59;
+    font-size: 10px;
+}
+
+.doc-status {
+    padding: 7px 13px;
+    border-radius: 10px;
+    background: #e6eee1;
+    color: #586750;
+    font-size: 11px;
+}
+
+.doc-status--approved {
+    background: #dee8d8;
+}
+
+.doc-status--pending {
+    background: #eeedf3;
+    color: #69627a;
+}
+
+.doc-status--rejected {
+    background: #f6e7e5;
+    color: #914f49;
+}
+
+.download-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.doc-empty {
+    background: white;
+    border: 1px solid #e4e1d8;
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    color: #9ca0a0;
+}
+
+.approval-summary {
+    background: #111610;
+    color: white;
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 25px;
+}
+
+.approval-summary strong {
+    display: block;
+    font-family: Georgia, serif;
+    font-size: 34px;
+}
+
+.approval-summary span {
+    color: #9fa89a;
+}
+
+.approval-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.due-date {
+    color: #824438;
+    font-size: 11px;
+    margin-right: 10px;
+}
+
+.approve-button {
+    background: #edf3e9;
+    color: #53654a;
+}
+
+.reject-button {
+    background: #fbf0ef;
+    color: #8e5049;
+}
+
+.search-card {
+    background: white;
+    padding: 20px;
+    border: 1px solid #e4e1d8;
+    border-radius: 20px;
+    margin-bottom: 18px;
+}
+
+.search-large {
+    display: flex;
+    border: 1px solid #e4e1d8;
+    border-radius: 15px;
+    padding: 7px 7px 7px 15px;
+    margin-bottom: 15px;
+}
+
+.search-large input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 12px;
+}
+
+.search-result-count {
+    color: #999;
+    margin: 10px;
+}
+
+.overview-grid,
+.version-grid,
+.upload-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.overview-panel,
+.upload-card {
+    background: white;
+    border: 1px solid #e4e1d8;
+    border-radius: 20px;
+    padding: 26px;
+}
+
+.overview-panel h2,
+.upload-info h2 {
+    font-family: Georgia, serif;
+    font-weight: 500;
+}
+
+.extraction-card {
+    background: #f5f3ed;
+    padding: 20px;
+    border-radius: 16px;
+}
+
+.extraction-title {
+    color: #a2a6a5;
+    font-size: 11px;
+    margin-bottom: 12px;
+}
+
+.overview-metric {
+    display: flex;
+    justify-content: space-between;
+    padding: 11px 0;
+}
+
+.overview-metric > div {
+    display: grid;
+    color: #808584;
+}
+
+.overview-metric small {
+    color: #b2b5b4;
+}
+
+.ocr-stats .overview-metric {
+    border-bottom: 1px solid #e4e1d8;
+    padding: 20px 0;
+}
+
+.ocr-stats strong {
+    font-family: Georgia, serif;
+    font-size: 28px;
+}
+
+.extraction-footer {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.upload-card {
+    display: grid;
+    gap: 16px;
+}
+
+.drop-zone {
+    border: 1.5px dashed #cbc8bf;
+    background: #faf9f5;
+    border-radius: 18px;
+    padding: 35px;
+    display: grid;
+    text-align: center;
+    justify-items: center;
+    gap: 8px;
+}
+
+.drop-zone input {
+    display: none;
+}
+
+.drop-zone span {
+    color: #a3a6a5;
+    font-size: 11px;
+}
+
+.upload-icon {
+    background: #101510;
+    color: white;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.upload-card label,
+.version-form label,
+.version-selector label {
+    display: grid;
+    gap: 7px;
+    font-size: 11px;
+    color: #767b7a;
+}
+
+.upload-card input,
+.upload-card select,
+.version-form input,
+.version-form textarea,
+.version-selector select {
+    border: 1px solid #e4e1d8;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.ocr-checkbox {
+    display: flex !important;
+    gap: 10px;
+}
+
+.ocr-checkbox span {
+    display: grid;
+}
+
+.ocr-checkbox small {
+    color: #a1a5a4;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.form-message {
+    background: #e9f0e5;
+    color: #55654f;
+    padding: 12px;
+    border-radius: 10px;
+}
+
+.upload-info {
+    background: #111610;
+    color: white;
+    border-radius: 20px;
+    padding: 26px;
+    align-self: start;
+}
+
+.upload-info p {
+    color: #90958e;
+    line-height: 1.7;
+}
+
+.upload-info-list {
+    display: grid;
+    gap: 12px;
+    color: #b8c5ac;
+    font-size: 11px;
+}
+
+.version-selector {
+    margin-bottom: 20px;
+}
+
+.version-list {
+    display: grid;
+}
+
+.version-row {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    padding: 15px 0;
+    border-bottom: 1px solid #e4e1d8;
+}
+
+.version-dot span {
+    width: 9px;
+    height: 9px;
+    background: #8da476;
+    border-radius: 50%;
+    display: block;
+}
+
+.version-header {
+    display: flex;
+    justify-content: space-between;
+}
+
+.version-header small {
+    color: #9da1a0;
+}
+
+.version-content p {
+    font-family: Georgia, serif;
+}
+
+.version-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.version-form {
+    display: grid;
+    gap: 16px;
+}
+
+.doc-loading {
+    min-height: 70vh;
+    display: grid;
+    place-items: center;
+    background: #f7f6f1;
+}
+
+@media (max-width: 1100px) {
+
+    .doc-kpi-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .doc-filter-row {
+        flex-direction: column;
+    }
+
+    .doc-search {
+        min-width: auto;
+    }
+
+    .overview-grid,
+    .version-grid,
+    .upload-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+
+    .documents-page {
+        padding: 20px 14px;
+    }
+
+    .doc-title-row,
+    .doc-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 18px;
+    }
+
+    .doc-kpi-grid,
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .doc-tabs {
+        overflow-x: auto;
+    }
+
+    .doc-row-right {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}

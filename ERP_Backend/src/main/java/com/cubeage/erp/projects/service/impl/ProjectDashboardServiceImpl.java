@@ -1,0 +1,9 @@
+package com.cubeage.erp.projects.service.impl;
+import com.cubeage.erp.projects.dto.response.ProjectDashboardResponse; import com.cubeage.erp.projects.enums.*; import com.cubeage.erp.projects.repository.*; import com.cubeage.erp.projects.service.ProjectDashboardService;
+import lombok.RequiredArgsConstructor; import org.springframework.stereotype.Service; import org.springframework.transaction.annotation.Transactional;
+import java.math.*; import java.time.LocalDate;
+@Service @RequiredArgsConstructor @Transactional(readOnly=true)
+public class ProjectDashboardServiceImpl implements ProjectDashboardService {
+ private final ProjectRepository projectRepository; private final ProjectTaskRepository taskRepository; private final TimesheetRepository timesheetRepository;
+ @Override public ProjectDashboardResponse dashboard(Long tenantId){long total=projectRepository.countByTenantId(tenantId);long active=projectRepository.countByTenantIdAndStatus(tenantId,ProjectStatus.ACTIVE);long completed=projectRepository.countByTenantIdAndStatus(tenantId,ProjectStatus.COMPLETED);long risk=projectRepository.findByTenantIdOrderByCreatedAtDesc(tenantId).stream().filter(p->taskRepository.findByTenantIdAndProject_IdOrderByPlannedStartDateAsc(tenantId,p.getId()).stream().anyMatch(t->Boolean.TRUE.equals(t.getAtRisk()))).count();long overdue=taskRepository.countByTenantIdAndPlannedEndDateBeforeAndStatusNot(tenantId,LocalDate.now(),TaskStatus.COMPLETED);long pending=timesheetRepository.countByTenantIdAndStatus(tenantId,TimesheetStatus.SUBMITTED);BigDecimal plan=projectRepository.totalPlannedBudget(tenantId);BigDecimal actual=projectRepository.totalActualBudget(tenantId);BigDecimal util=plan.signum()==0?BigDecimal.ZERO:actual.multiply(BigDecimal.valueOf(100)).divide(plan,2,RoundingMode.HALF_UP);return new ProjectDashboardResponse(total,active,completed,risk,overdue,pending,plan,actual,util);}
+}
