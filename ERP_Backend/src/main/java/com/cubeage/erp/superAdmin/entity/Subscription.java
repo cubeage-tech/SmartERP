@@ -10,7 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Entity
+@Entity(name = "SuperAdminSubscription")
 @Table(name = "sa_subscriptions")
 @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
 public class Subscription {

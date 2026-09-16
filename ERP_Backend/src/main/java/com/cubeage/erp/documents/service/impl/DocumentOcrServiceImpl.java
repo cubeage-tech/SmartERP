@@ -37,14 +37,14 @@ public class DocumentOcrServiceImpl implements DocumentOcrService {
     private final OcrMapper mapper;
 
     @Override
-    public OcrExtractionResponse process(Long companyId, Long documentId) {
-        Document document = documentRepository.findByIdAndCompanyId(documentId, companyId)
+    public OcrExtractionResponse process(Long tenantId, Long documentId) {
+        Document document = documentRepository.findByIdAndTenantId(documentId, tenantId)
                 .orElseThrow(() -> new DocumentNotFoundException(documentId));
 
         OcrExtraction extraction = ocrRepository
-                .findByDocument_IdAndCompanyId(documentId, companyId)
+                .findByDocument_IdAndTenantId(documentId, tenantId)
                 .orElseGet(() -> OcrExtraction.builder()
-                        .companyId(companyId)
+                        .tenantId(tenantId)
                         .document(document)
                         .autoPostedToGl(false)
                         .manualReviewRequired(false)
@@ -105,8 +105,8 @@ public class DocumentOcrServiceImpl implements DocumentOcrService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<OcrExtractionResponse> getAll(Long companyId) {
-        return ocrRepository.findByCompanyIdOrderByProcessedAtDesc(companyId)
+    public List<OcrExtractionResponse> getAll(Long tenantId) {
+        return ocrRepository.findByTenantIdOrderByProcessedAtDesc(tenantId)
                 .stream()
                 .map(mapper::toResponse)
                 .toList();
@@ -114,8 +114,8 @@ public class DocumentOcrServiceImpl implements DocumentOcrService {
 
     @Override
     @Transactional(readOnly = true)
-    public OcrExtractionResponse getLatest(Long companyId) {
-        return ocrRepository.findByCompanyIdOrderByProcessedAtDesc(companyId)
+    public OcrExtractionResponse getLatest(Long tenantId) {
+        return ocrRepository.findByTenantIdOrderByProcessedAtDesc(tenantId)
                 .stream()
                 .findFirst()
                 .map(mapper::toResponse)
@@ -124,8 +124,8 @@ public class DocumentOcrServiceImpl implements DocumentOcrService {
 
     @Override
     @Transactional(readOnly = true)
-    public OcrStatsResponse getStats(Long companyId) {
-        List<OcrExtraction> all = ocrRepository.findByCompanyIdOrderByProcessedAtDesc(companyId);
+    public OcrStatsResponse getStats(Long tenantId) {
+        List<OcrExtraction> all = ocrRepository.findByTenantIdOrderByProcessedAtDesc(tenantId);
 
         long processed = all.stream()
                 .filter(item -> item.getStatus() == OcrStatus.COMPLETED
@@ -133,25 +133,25 @@ public class DocumentOcrServiceImpl implements DocumentOcrService {
                 .count();
 
         long processedThisMonth = ocrRepository
-                .countByCompanyIdAndProcessedAtGreaterThanEqual(
-                        companyId,
+                .countByTenantIdAndProcessedAtGreaterThanEqual(
+                        tenantId,
                         YearMonth.now().atDay(1).atStartOfDay()
                 );
 
         double averageAccuracy = ocrRepository.averageConfidence(
-                companyId,
+                tenantId,
                 List.of(OcrStatus.COMPLETED, OcrStatus.MANUAL_REVIEW)
         );
 
         long autoPostedDocuments = ocrRepository
-                .countByCompanyIdAndAutoPostedToGlTrue(companyId);
+                .countByTenantIdAndAutoPostedToGlTrue(tenantId);
 
         double autoPostedPercent = processed == 0
                 ? 0.0
                 : autoPostedDocuments * 100.0 / processed;
 
         long manualReviewCount = ocrRepository
-                .countByCompanyIdAndManualReviewRequiredTrue(companyId);
+                .countByTenantIdAndManualReviewRequiredTrue(tenantId);
 
         return new OcrStatsResponse(
                 processed,

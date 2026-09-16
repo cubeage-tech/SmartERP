@@ -1,120 +1,47 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import RoleDashboardService from "../../core/services/modules/roleDashboard.service";
 import {
   Sparkles,
   ArrowUpRight,
-  ChevronRight,
 } from "lucide-react";
 
 /* =========================================================
    OPERATIONS DASHBOARD DATA
 ========================================================= */
 
-const stats = [
+const fallbackStats = [
   {
-    label: "INVENTORY HEALTH",
-    value: "94.2%",
-    footer: "-0.8%",
-    warning: true,
+    label: "TOTAL SKUS",
+    value: "—",
+    footer: "Loading inventory data",
   },
   {
     label: "PRODUCTION OEE",
-    value: "78.4%",
-    footer: "+2.1%",
+    value: "—",
+    footer: "Loading manufacturing data",
   },
   {
-    label: "OPEN ORDERS",
-    value: "1,284",
-    footer: "+8.6%",
+    label: "ACTIVE WORK ORDERS",
+    value: "—",
+    footer: "Loading manufacturing data",
   },
   {
-    label: "MACHINES RUNNING",
-    value: "8 / 13",
-    footer: "3 idle, 2 maint.",
+    label: "MACHINES DOWN",
+    value: "—",
+    footer: "Loading manufacturing data",
     warning: true,
   },
   {
     label: "LOW STOCK SKUS",
-    value: "7",
-    footer: "Reorder needed",
+    value: "—",
+    footer: "Loading inventory data",
     warning: true,
   },
   {
     label: "PENDING GRNS",
-    value: "4",
-    footer: "2 overdue",
+    value: "—",
+    footer: "Loading purchase data",
     warning: true,
-  },
-];
-
-/* =========================================================
-   AI INSIGHTS
-========================================================= */
-
-const insights = [
-  "Machine #4 showing wear pattern — service in 8 days",
-  "7 SKUs crossing reorder point this week",
-  "3 work orders delayed more than 2 days",
-  "GRN pending from Prism Industries for PO-0481",
-];
-
-/* =========================================================
-   PENDING APPROVALS
-========================================================= */
-
-const initialApprovals = [
-  {
-    id: "PO-0481",
-    title: "Prism Industries",
-    type: "Purchase Order",
-    amount: "₹2.4L",
-    urgent: true,
-    status: "PENDING",
-  },
-  {
-    id: "ST-0842",
-    title: "Stock transfer · Factory → Warehouse B",
-    type: "Stock Transfer",
-    amount: "840 units",
-    urgent: false,
-    status: "PENDING",
-  },
-];
-
-/* =========================================================
-   QUICK ACTIONS
-========================================================= */
-
-const quickActions = [
-  "New Work Order",
-  "Stock Transfer",
-  "Purchase Request",
-  "Machine Log",
-];
-
-/* =========================================================
-   STOCK CHART DATA
-========================================================= */
-
-const stockData = [
-  {
-    label: "1",
-    value: 8750,
-  },
-  {
-    label: "2",
-    value: 9100,
-  },
-  {
-    label: "3",
-    value: 8900,
-  },
-  {
-    label: "4",
-    value: 8600,
-  },
-  {
-    label: "5",
-    value: 8420,
   },
 ];
 
@@ -195,85 +122,92 @@ function StatCard({
    TOTAL STOCK UNITS CHART
 ========================================================= */
 
-function StockOverview() {
-  const [hoveredIndex, setHoveredIndex] =
-    useState(null);
+function StockOverview({ warehouseStock = [], totalStockUnits = 0 }) {
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+
+  const data = useMemo(
+    () =>
+      Array.isArray(warehouseStock)
+        ? warehouseStock.map((item) => ({
+            label: item.warehouseName || "Unassigned warehouse",
+            value: Number(item.quantity) || 0,
+          }))
+        : [],
+    [warehouseStock]
+  );
+
+  if (data.length === 0) {
+    return (
+      <section className="rounded-[20px] border border-[#e3e0d9] bg-white px-6 py-6">
+        <p className="font-sans text-[9px] font-medium uppercase tracking-[0.15em] text-[#9ba19b]">
+          Stock Units by Warehouse
+        </p>
+
+        <p className="mt-4 font-sans text-[13px] text-[#8d938d]">
+          No inventory records are available yet.
+        </p>
+      </section>
+    );
+  }
 
   const chartWidth = 1000;
   const chartHeight = 250;
-
   const leftPadding = 5;
   const rightPadding = 5;
   const topPadding = 28;
   const bottomPadding = 12;
 
-  const minValue = 8200;
-  const maxValue = 9400;
+  const values = data.map((item) => item.value);
+  const lowestValue = Math.min(...values);
+  const highestValue = Math.max(...values);
+  const rangePadding = Math.max(1, (highestValue - lowestValue) * 0.2);
+
+  const minValue = Math.max(0, lowestValue - rangePadding);
+  const maxValue =
+    highestValue === lowestValue
+      ? highestValue + 1
+      : highestValue + rangePadding;
 
   const xStep =
-    (chartWidth -
-      leftPadding -
-      rightPadding) /
-    (stockData.length - 1);
+    data.length > 1
+      ? (chartWidth - leftPadding - rightPadding) / (data.length - 1)
+      : 0;
 
-  const getX = (index) =>
-    leftPadding + index * xStep;
+  const getX = (index) => leftPadding + index * xStep;
 
   const getY = (value) =>
     chartHeight -
     bottomPadding -
-    ((value - minValue) /
-      (maxValue - minValue)) *
-      (chartHeight -
-        topPadding -
-        bottomPadding);
+    ((value - minValue) / (maxValue - minValue)) *
+      (chartHeight - topPadding - bottomPadding);
 
-  const points = stockData.map(
-    (item, index) => ({
-      ...item,
-      x: getX(index),
-      y: getY(item.value),
-    })
-  );
+  const points = data.map((item, index) => ({
+    ...item,
+    x: getX(index),
+    y: getY(item.value),
+  }));
 
   const buildSmoothPath = (items) => {
     if (!items.length) return "";
 
     let path = `M ${items[0].x} ${items[0].y}`;
 
-    for (
-      let i = 1;
-      i < items.length;
-      i++
-    ) {
-      const previous = items[i - 1];
-      const current = items[i];
-
-      const controlPoint1X =
-        previous.x +
-        (current.x - previous.x) / 2;
-
-      const controlPoint2X =
-        current.x -
-        (current.x - previous.x) / 2;
+    for (let index = 1; index < items.length; index += 1) {
+      const previous = items[index - 1];
+      const current = items[index];
 
       path += `
         C
-        ${controlPoint1X}
-        ${previous.y},
-        ${controlPoint2X}
-        ${current.y},
-        ${current.x}
-        ${current.y}
+        ${previous.x + (current.x - previous.x) / 2} ${previous.y},
+        ${current.x - (current.x - previous.x) / 2} ${current.y},
+        ${current.x} ${current.y}
       `;
     }
 
     return path;
   };
 
-  const linePath = buildSmoothPath(
-    points
-  );
+  const linePath = buildSmoothPath(points);
 
   const areaPath = `${linePath}
     L ${points[points.length - 1].x} ${chartHeight}
@@ -281,119 +215,56 @@ function StockOverview() {
     Z`;
 
   const handleMouseMove = (event) => {
-    const rect =
-      event.currentTarget.getBoundingClientRect();
+    const rect = event.currentTarget.getBoundingClientRect();
 
     const localX =
-      ((event.clientX - rect.left) /
-        rect.width) *
-      chartWidth;
+      ((event.clientX - rect.left) / rect.width) * chartWidth;
 
     let nearestIndex = 0;
     let nearestDistance = Infinity;
 
-    points.forEach(
-      (point, index) => {
-        const distance = Math.abs(
-          point.x - localX
-        );
+    points.forEach((point, index) => {
+      const distance = Math.abs(point.x - localX);
 
-        if (
-          distance < nearestDistance
-        ) {
-          nearestDistance = distance;
-          nearestIndex = index;
-        }
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
       }
-    );
+    });
 
     setHoveredIndex(nearestIndex);
   };
 
   const hoveredPoint =
-    hoveredIndex !== null
-      ? points[hoveredIndex]
-      : null;
+    hoveredIndex === null ? null : points[hoveredIndex];
 
   return (
-    <section
-      className="
-        overflow-hidden
-        rounded-[20px]
-        border
-        border-[#e3e0d9]
-        bg-white
-        px-6
-        pt-6
-        pb-5
-      "
-    >
-      {/* HEADER */}
+    <section className="overflow-hidden rounded-[20px] border border-[#e3e0d9] bg-white px-6 pt-6 pb-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="font-sans text-[9px] font-medium uppercase tracking-[0.15em] text-[#9ba19b]">
+            Stock Units by Warehouse
+          </p>
 
-      <div>
-        <p
-          className="
-            font-sans
-            text-[9px]
-            font-medium
-            uppercase
-            tracking-[0.15em]
-            text-[#9ba19b]
-          "
-        >
-          Total Stock Units
-        </p>
-
-        <div className="mt-2 flex items-center gap-1">
-          <span
-            className="
-              font-serif
-              text-[20px]
-              text-[#11130f]
-            "
-          >
-            8,420 units
-          </span>
-
-          <span
-            className="
-              font-serif
-              text-[16px]
-              text-[#a17871]
-            "
-          >
-            ↓
-          </span>
-
-          <span
-            className="
-              font-sans
-              text-[11px]
-              text-[#a17871]
-            "
-          >
-            0.8%
-          </span>
+          <div className="mt-2 flex items-center gap-1">
+            <span className="font-serif text-[20px] text-[#11130f]">
+              {Number(totalStockUnits || 0).toLocaleString("en-IN")} units
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* CHART */}
+        <span className="font-sans text-[10px] text-[#8d938d]">
+          {data.length} warehouse{data.length === 1 ? "" : "s"}
+        </span>
+      </div>
 
       <div className="relative mt-7 h-[245px] w-full">
         <svg
           viewBox={`0 0 ${chartWidth} ${chartHeight}`}
           preserveAspectRatio="none"
-          className="
-            absolute
-            inset-0
-            h-full
-            w-full
-            cursor-crosshair
-          "
+          className="absolute inset-0 h-full w-full cursor-crosshair"
           onMouseMove={handleMouseMove}
-          onMouseLeave={() =>
-            setHoveredIndex(null)
-          }
+          onMouseLeave={() => setHoveredIndex(null)}
         >
           <defs>
             <linearGradient
@@ -403,28 +274,12 @@ function StockOverview() {
               x2="0"
               y2="1"
             >
-              <stop
-                offset="0%"
-                stopColor="#a9a4bc"
-                stopOpacity="0.16"
-              />
-
-              <stop
-                offset="100%"
-                stopColor="#a9a4bc"
-                stopOpacity="0"
-              />
+              <stop offset="0%" stopColor="#a9a4bc" stopOpacity="0.16" />
+              <stop offset="100%" stopColor="#a9a4bc" stopOpacity="0" />
             </linearGradient>
           </defs>
 
-          {/* AREA */}
-
-          <path
-            d={areaPath}
-            fill="url(#operationsStockFade)"
-          />
-
-          {/* LINE */}
+          <path d={areaPath} fill="url(#operationsStockFade)" />
 
           <path
             d={linePath}
@@ -435,89 +290,49 @@ function StockOverview() {
             strokeLinejoin="round"
           />
 
-          {/* HOVER GUIDE */}
+          {points.map((point, index) => (
+            <circle
+              key={point.label}
+              cx={point.x}
+              cy={point.y}
+              r={hoveredIndex === index ? 6 : 4}
+              fill="#aaa6bb"
+              stroke="#ffffff"
+              strokeWidth="2"
+            />
+          ))}
 
           {hoveredPoint && (
-            <>
-              <line
-                x1={hoveredPoint.x}
-                y1={15}
-                x2={hoveredPoint.x}
-                y2={220}
-                stroke="#c6c3cc"
-                strokeWidth="1"
-                opacity="0.9"
-              />
-
-              <circle
-                cx={hoveredPoint.x}
-                cy={hoveredPoint.y}
-                r="5"
-                fill="#aaa6bb"
-                stroke="#ffffff"
-                strokeWidth="2"
-              />
-            </>
+            <line
+              x1={hoveredPoint.x}
+              y1={15}
+              x2={hoveredPoint.x}
+              y2={220}
+              stroke="#c6c3cc"
+              strokeWidth="1"
+              strokeDasharray="4 4"
+            />
           )}
         </svg>
 
-        {/* TOOLTIP */}
-
         {hoveredPoint && (
           <div
-            className="
-              pointer-events-none
-              absolute
-              z-10
-              rounded-[14px]
-              bg-[#111411]
-              px-3
-              py-3
-              shadow-[0_8px_20px_rgba(20,24,20,0.17)]
-            "
+            className="pointer-events-none absolute z-10 rounded-[14px] bg-[#111411] px-3 py-3 shadow-[0_8px_20px_rgba(20,24,20,0.17)]"
             style={{
               left: `${Math.min(
-                Math.max(
-                  (hoveredPoint.x /
-                    chartWidth) *
-                    100,
-                  6
-                ),
+                Math.max((hoveredPoint.x / chartWidth) * 100, 6),
                 84
               )}%`,
-              top: `${Math.min(
-                Math.max(
-                  (hoveredPoint.y /
-                    chartHeight) *
-                    100 +
-                    12,
-                  24
-                ),
-                68
-              )}%`,
-              transform:
-                "translateX(-20%)",
+              top: "22%",
+              transform: "translateX(-20%)",
             }}
           >
-            <p
-              className="
-                font-sans
-                text-[10px]
-                text-white
-              "
-            >
+            <p className="font-sans text-[10px] text-white">
               {hoveredPoint.label}
             </p>
 
-            <p
-              className="
-                mt-1
-                font-sans
-                text-[10px]
-                text-[#8b9aa8]
-              "
-            >
-              v : {hoveredPoint.value}
+            <p className="mt-1 font-sans text-[10px] text-[#b8b5c6]">
+              {hoveredPoint.value.toLocaleString("en-IN")} units
             </p>
           </div>
         )}
@@ -530,7 +345,7 @@ function StockOverview() {
    AI INSIGHTS
 ========================================================= */
 
-function AIInsights() {
+function AIInsights({ items = [] }) {
   return (
     <section
       className="
@@ -577,14 +392,14 @@ function AIInsights() {
             text-[#aab99b]
           "
         >
-          AI Insights for Operations Manager
+          Operations Insights
         </p>
       </div>
 
       {/* INSIGHTS */}
 
       <div className="mt-5 space-y-3">
-        {insights.map(
+        {items.map(
           (item, index) => (
             <div
               key={index}
@@ -679,394 +494,52 @@ function AIInsights() {
 }
 
 /* =========================================================
-   PENDING APPROVALS
+  OPERATIONAL ALERTS
 ========================================================= */
 
-function PendingApprovals() {
-  const [approvals, setApprovals] =
-    useState(initialApprovals);
-
-  const handleApprove = (id) => {
-    setApprovals((current) =>
-      current.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status: "APPROVED",
-            }
-          : item
-      )
-    );
-  };
-
-  const handleReject = (id) => {
-    setApprovals((current) =>
-      current.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status: "REJECTED",
-            }
-          : item
-      )
-    );
-  };
-
-  const pendingCount =
-    approvals.filter(
-      (item) => item.status === "PENDING"
-    ).length;
-
+function OperationalAlerts({ items = [] }) {
   return (
-    <section
-      className="
-        overflow-hidden
-        rounded-[20px]
-        border
-        border-[#e3e0d9]
-        bg-white
-      "
-    >
-      {/* HEADER */}
-
-      <div
-        className="
-          flex
-          items-center
-          justify-between
-          border-b
-          border-[#e5e2db]
-          px-7
-          py-6
-        "
-      >
-        <h2
-          className="
-            font-serif
-            text-[22px]
-            leading-none
-            text-[#161815]
-          "
-        >
-          Pending Approvals
+    <section className="overflow-hidden rounded-[20px] border border-[#e3e0d9] bg-white">
+      <div className="flex items-center justify-between border-b border-[#e5e2db] px-7 py-6">
+        <h2 className="font-serif text-[22px] leading-none text-[#161815]">
+          Operational Alerts
         </h2>
 
-        <span
-          className="
-            rounded-[10px]
-            bg-[#f2e9e5]
-            px-3
-            py-2
-            font-sans
-            text-[9px]
-            font-medium
-            text-[#996d62]
-          "
-        >
-          {pendingCount} waiting
+        <span className="rounded-[10px] bg-[#f2e9e5] px-3 py-2 font-sans text-[9px] font-medium text-[#996d62]">
+          {items.length} active
         </span>
       </div>
 
-      {/* ROWS */}
-
-      {approvals.map((item) => (
-        <div
-          key={item.id}
-          className="
-            group
-            relative
-            grid
-            min-h-[102px]
-            grid-cols-[minmax(0,1fr)_auto]
-            items-center
-            gap-5
-            border-b
-            border-[#e6e3dc]
-            px-7
-            transition-colors
-            duration-200
-            last:border-b-0
-            hover:bg-[#f0f0eb]
-          "
-        >
-          {/* LEFT */}
-
+      {items.length === 0 ? (
+        <p className="px-7 py-8 font-sans text-[13px] text-[#8d938d]">
+          No operational alerts require attention.
+        </p>
+      ) : (
+        items.map((item) => (
           <div
-            className="
-              flex
-              min-w-0
-              items-center
-              gap-5
-            "
+            key={item.id}
+            className="flex min-h-[92px] items-center gap-5 border-b border-[#e6e3dc] px-7 last:border-b-0"
           >
             <span
-              className={`
-                h-[11px]
-                w-[11px]
-                shrink-0
-                rounded-full
-                transition-transform
-                duration-200
-                group-hover:scale-[1.1]
-                ${
-                  item.urgent
-                    ? "bg-[#a66a60]"
-                    : "bg-[#b1a16d]"
-                }
-              `}
+              className={
+                item.warning
+                  ? "h-[11px] w-[11px] shrink-0 rounded-full bg-[#a66a60]"
+                  : "h-[11px] w-[11px] shrink-0 rounded-full bg-[#b1a16d]"
+              }
             />
 
             <div className="min-w-0">
-              <p
-                className="
-                  truncate
-                  font-sans
-                  text-[13px]
-                  text-[#252824]
-                  transition-colors
-                  duration-200
-                  group-hover:text-[#171916]
-                "
-              >
-                <span className="font-medium">
-                  {item.id}
-                </span>
-
-                <span className="mx-2">
-                  ·
-                </span>
-
+              <p className="font-sans text-[13px] text-[#252824]">
                 {item.title}
               </p>
 
-              <p
-                className="
-                  mt-2
-                  font-sans
-                  text-[11px]
-                  text-[#b0b4af]
-                  transition-colors
-                  duration-200
-                  group-hover:text-[#8d938d]
-                "
-              >
-                {item.type}
+              <p className="mt-2 font-sans text-[11px] text-[#8d938d]">
+                {item.description}
               </p>
             </div>
           </div>
-
-          {/* RIGHT */}
-
-          <div
-            className="
-              flex
-              items-center
-              justify-end
-              gap-3
-            "
-          >
-            <span
-              className="
-                min-w-[82px]
-                text-right
-                font-serif
-                text-[20px]
-                text-[#181b17]
-              "
-            >
-              {item.amount}
-            </span>
-
-            {/* HOVER BUTTONS */}
-
-            {item.status ===
-              "PENDING" && (
-              <div
-                className="
-                  flex
-                  items-center
-                  gap-2
-                  overflow-hidden
-                  max-w-0
-                  translate-x-2
-                  opacity-0
-                  pointer-events-none
-                  transition-all
-                  duration-200
-                  ease-out
-                  group-hover:max-w-[150px]
-                  group-hover:translate-x-0
-                  group-hover:opacity-100
-                  group-hover:pointer-events-auto
-                "
-              >
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleApprove(item.id)
-                  }
-                  className="
-                    shrink-0
-                    rounded-[9px]
-                    border
-                    border-[#cdd9c8]
-                    bg-[#eef3eb]
-                    px-3
-                    py-1.5
-                    font-sans
-                    text-[9px]
-                    font-medium
-                    text-[#5e6d58]
-                    transition-all
-                    duration-150
-                    hover:border-[#bdccb6]
-                    hover:bg-[#dfe9db]
-                  "
-                >
-                  Approve
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleReject(item.id)
-                  }
-                  className="
-                    shrink-0
-                    rounded-[9px]
-                    border
-                    border-[#dfcbc7]
-                    bg-[#f6efed]
-                    px-3
-                    py-1.5
-                    font-sans
-                    text-[9px]
-                    font-medium
-                    text-[#8a625b]
-                    transition-all
-                    duration-150
-                    hover:border-[#d5bdb8]
-                    hover:bg-[#eadbd8]
-                  "
-                >
-                  Reject
-                </button>
-              </div>
-            )}
-
-            {/* FINAL STATUS */}
-
-            {item.status !==
-              "PENDING" && (
-              <span
-                className={`
-                  rounded-[9px]
-                  px-3
-                  py-1.5
-                  font-sans
-                  text-[9px]
-                  font-medium
-                  tracking-[0.06em]
-                  ${
-                    item.status ===
-                    "APPROVED"
-                      ? "bg-[#e3ebdf] text-[#53624f]"
-                      : "bg-[#eee2df] text-[#8a635b]"
-                  }
-                `}
-              >
-                {item.status}
-              </span>
-            )}
-          </div>
-        </div>
-      ))}
-    </section>
-  );
-}
-
-/* =========================================================
-   QUICK ACTIONS
-========================================================= */
-
-function QuickActions() {
-  return (
-    <section
-      className="
-        overflow-hidden
-        rounded-[20px]
-        border
-        border-[#e3e0d9]
-        bg-white
-      "
-    >
-      <div
-        className="
-          border-b
-          border-[#e5e2db]
-          px-7
-          py-6
-        "
-      >
-        <h2
-          className="
-            font-serif
-            text-[22px]
-            leading-none
-            text-[#161815]
-          "
-        >
-          Quick Actions
-        </h2>
-      </div>
-
-      <div className="space-y-3 px-6 py-6">
-        {quickActions.map(
-          (action) => (
-            <button
-              key={action}
-              type="button"
-              className="
-                group
-                flex
-                w-full
-                items-center
-                justify-between
-                rounded-[15px]
-                border
-                border-[#e4e1da]
-                bg-white
-                px-4
-                py-4
-                text-left
-                font-sans
-                text-[13px]
-                text-[#777d78]
-                transition-all
-                duration-200
-                hover:-translate-y-[1px]
-                hover:border-[#d5d2ca]
-                hover:bg-[#f1f1ec]
-                hover:text-[#262a26]
-              "
-            >
-              <span>{action}</span>
-
-              <ChevronRight
-                size={14}
-                strokeWidth={1.6}
-                className="
-                  text-[#b7bbb7]
-                  transition-all
-                  duration-200
-                  group-hover:translate-x-1
-                  group-hover:text-[#656b65]
-                "
-              />
-            </button>
-          )
-        )}
-      </div>
+        ))
+      )}
     </section>
   );
 }
@@ -1076,10 +549,146 @@ function QuickActions() {
 ========================================================= */
 
 export default function OperationsDashboard() {
-  const [
-    quickActionOpen,
-    setQuickActionOpen,
-  ] = useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState("");
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        setLoading(true);
+        setDashboardError("");
+
+        const [inventoryResponse, manufacturingResponse, purchaseResponse] =
+          await Promise.all([
+            RoleDashboardService.getInventoryDashboard(),
+            RoleDashboardService.getManufacturingDashboard(),
+            RoleDashboardService.getPurchaseDashboard(),
+          ]);
+
+        setDashboardData({
+          inventory: inventoryResponse.data,
+          manufacturing: manufacturingResponse.data,
+          purchase: purchaseResponse.data,
+        });
+      } catch (error) {
+        console.error("Operations dashboard API error:", error);
+
+        setDashboardError(
+          error?.response?.data?.message ||
+            "Unable to load the Operations dashboard."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
+
+  const inventory = dashboardData?.inventory;
+  const manufacturingStats = dashboardData?.manufacturing?.stats || [];
+  const purchase = dashboardData?.purchase;
+
+  const manufacturingValue = (label, fallback = "—") =>
+    manufacturingStats.find((item) => item.label === label)?.value || fallback;
+
+  const manufacturingFooter = (label, fallback = "") =>
+    manufacturingStats.find((item) => item.label === label)?.description || fallback;
+
+  const machineDownCount = Number(manufacturingValue("MACHINE DOWN", "0"));
+
+  const stats = dashboardData
+    ? [
+        {
+          label: "TOTAL SKUS",
+          value: Number(inventory?.totalSkus || 0).toLocaleString("en-IN"),
+          footer: `${Number(inventory?.warehouseCount || 0)} active warehouse(s)`,
+        },
+        {
+          label: "PRODUCTION OEE",
+          value: manufacturingValue("OEE"),
+          footer: manufacturingFooter("OEE"),
+        },
+        {
+          label: "ACTIVE WORK ORDERS",
+          value: manufacturingValue("ACTIVE WOS", "0"),
+          footer: manufacturingFooter("ACTIVE WOS"),
+        },
+        {
+          label: "MACHINES DOWN",
+          value: machineDownCount.toLocaleString("en-IN"),
+          footer: manufacturingFooter("MACHINE DOWN"),
+          warning: machineDownCount > 0,
+        },
+        {
+          label: "LOW STOCK SKUS",
+          value: Number(inventory?.lowStockItems || 0).toLocaleString("en-IN"),
+          footer: `${Number(inventory?.outOfStockItems || 0)} out of stock`,
+          warning: Number(inventory?.lowStockItems || 0) > 0,
+        },
+        {
+          label: "PENDING GRNS",
+          value: Number(purchase?.pendingGoodsReceiptCount || 0).toLocaleString("en-IN"),
+          footer: "Goods receipts awaiting processing",
+          warning: Number(purchase?.pendingGoodsReceiptCount || 0) > 0,
+        },
+      ]
+    : fallbackStats;
+
+  const operationInsights = dashboardData
+    ? [
+        Number(inventory?.lowStockItems || 0) > 0
+          ? `${inventory.lowStockItems} SKU(s) are below their minimum stock level.`
+          : "No SKU is currently below its minimum stock level.",
+        Number(inventory?.outOfStockItems || 0) > 0
+          ? `${inventory.outOfStockItems} SKU(s) are out of stock.`
+          : "There are no out-of-stock SKUs.",
+        machineDownCount > 0
+          ? `${machineDownCount} machine(s) are in maintenance or down status.`
+          : "All tracked machines are operational.",
+        Number(purchase?.pendingGoodsReceiptCount || 0) > 0
+          ? `${purchase.pendingGoodsReceiptCount} goods receipt(s) are pending.`
+          : "There are no pending goods receipts.",
+      ]
+    : [];
+
+  const operationalAlerts = dashboardData
+    ? [
+        ...(Number(inventory?.lowStockItems || 0) > 0
+          ? [{
+              id: "LOW_STOCK",
+              title: "Low stock SKUs need replenishment",
+              description: `${inventory.lowStockItems} SKU(s) are below their minimum stock level.`,
+              warning: true,
+            }]
+          : []),
+        ...(Number(inventory?.outOfStockItems || 0) > 0
+          ? [{
+              id: "OUT_OF_STOCK",
+              title: "Out-of-stock inventory requires attention",
+              description: `${inventory.outOfStockItems} SKU(s) currently have zero available quantity.`,
+              warning: true,
+            }]
+          : []),
+        ...(machineDownCount > 0
+          ? [{
+              id: "MACHINE_DOWN",
+              title: "Machine maintenance or downtime detected",
+              description: manufacturingFooter("MACHINE DOWN"),
+              warning: true,
+            }]
+          : []),
+        ...(Number(purchase?.pendingGoodsReceiptCount || 0) > 0
+          ? [{
+              id: "PENDING_GRN",
+              title: "Goods receipts are waiting for processing",
+              description: `${purchase.pendingGoodsReceiptCount} GRN(s) remain pending.`,
+              warning: false,
+            }]
+          : []),
+      ]
+    : [];
 
   return (
     <main
@@ -1100,6 +709,19 @@ export default function OperationsDashboard() {
           max-w-[1540px]
         "
       >
+
+                {dashboardError && (
+          <div className="mb-6 rounded-[14px] border border-[#e6c9c2] bg-[#fbf1ef] px-4 py-3 font-sans text-[12px] text-[#9b5e52]">
+            {dashboardError}
+          </div>
+        )}
+
+        {loading && (
+          <div className="mb-6 rounded-[14px] border border-[#e3e0d9] bg-white px-4 py-3 font-sans text-[12px] text-[#727870]">
+            Loading Operations dashboard…
+          </div>
+        )}
+
         {/* =================================================
             HEADER
         ================================================== */}
@@ -1207,106 +829,6 @@ export default function OperationsDashboard() {
               AI Active
             </button>
 
-            <button
-              type="button"
-              onClick={() =>
-                setQuickActionOpen(
-                  (value) => !value
-                )
-              }
-              className="
-                group
-                flex
-                h-[43px]
-                items-center
-                gap-2
-                rounded-[14px]
-                bg-[#151714]
-                px-5
-                font-sans
-                text-[10px]
-                font-medium
-                uppercase
-                tracking-[0.08em]
-                text-white
-                transition-all
-                duration-200
-                hover:-translate-y-[1px]
-                hover:bg-[#292c27]
-                hover:shadow-[0_7px_18px_rgba(20,23,20,0.12)]
-              "
-            >
-              + Quick Action
-
-              <ArrowUpRight
-                size={12}
-                strokeWidth={1.7}
-                className="
-                  transition-transform
-                  duration-200
-                  group-hover:-translate-y-[1px]
-                  group-hover:translate-x-[1px]
-                "
-              />
-            </button>
-
-            {/* QUICK ACTION MENU */}
-
-            {quickActionOpen && (
-              <div
-                className="
-                  absolute
-                  right-0
-                  top-[52px]
-                  z-30
-                  w-[215px]
-                  rounded-[16px]
-                  border
-                  border-[#e1ded7]
-                  bg-white
-                  p-2
-                  shadow-[0_14px_35px_rgba(20,24,20,0.12)]
-                "
-              >
-                {quickActions.map(
-                  (action) => (
-                    <button
-                      key={action}
-                      type="button"
-                      onClick={() =>
-                        setQuickActionOpen(
-                          false
-                        )
-                      }
-                      className="
-                        flex
-                        w-full
-                        items-center
-                        justify-between
-                        rounded-[10px]
-                        px-3
-                        py-3
-                        text-left
-                        font-sans
-                        text-[10px]
-                        text-[#737a74]
-                        transition-colors
-                        duration-150
-                        hover:bg-[#f1f1ec]
-                        hover:text-[#222620]
-                      "
-                    >
-                      {action}
-
-                      <ChevronRight
-                        size={12}
-                        strokeWidth={1.6}
-                      />
-                    </button>
-                  )
-                )}
-              </div>
-            )}
           </div>
         </section>
 
@@ -1348,13 +870,16 @@ export default function OperationsDashboard() {
             xl:grid-cols-[minmax(0,2.15fr)_minmax(340px,0.9fr)]
           "
         >
-          <StockOverview />
+          <StockOverview
+  warehouseStock={inventory?.warehouseStock || []}
+  totalStockUnits={inventory?.totalStockUnits || 0}
+/>
 
-          <AIInsights />
+<AIInsights items={operationInsights} />
         </section>
 
         {/* =================================================
-            APPROVALS + QUICK ACTIONS
+            APPROVALS
         ================================================== */}
 
         <section
@@ -1366,9 +891,8 @@ export default function OperationsDashboard() {
             xl:grid-cols-[minmax(0,2.1fr)_minmax(340px,0.85fr)]
           "
         >
-          <PendingApprovals />
+          <OperationalAlerts items={operationalAlerts} />
 
-          <QuickActions />
         </section>
       </div>
     </main>

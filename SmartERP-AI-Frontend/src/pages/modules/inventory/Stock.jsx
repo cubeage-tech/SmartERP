@@ -1,74 +1,9 @@
 import React, { useMemo, useState } from "react";
-import { Search, Plus } from "lucide-react";
+import { Search } from "lucide-react";
 
-const stockData = [
-  {
-    sku: "SKU-1042",
-    name: "Steel Plate 10mm",
-    category: "Raw Material",
-    warehouse: "W1 – Main",
-    qty: 840,
-    minLevel: 200,
-    unit: "kg",
-    value: "₹4,20,000",
-    status: "In Stock",
-  },
-  {
-    sku: "SKU-1041",
-    name: "Zinc Ingot",
-    category: "Raw Material",
-    warehouse: "W1 – Main",
-    qty: 120,
-    minLevel: 150,
-    unit: "kg",
-    value: "₹1,80,000",
-    status: "Low Stock",
-  },
-  {
-    sku: "SKU-1040",
-    name: "M8 Hex Bolts (Box/200)",
-    category: "Hardware",
-    warehouse: "W2 – Stores",
-    qty: 0,
-    minLevel: 50,
-    unit: "box",
-    value: "₹0",
-    status: "Out of Stock",
-  },
-  {
-    sku: "SKU-1039",
-    name: "Sigma Brackets A4",
-    category: "Components",
-    warehouse: "W1 – Main",
-    qty: 340,
-    minLevel: 100,
-    unit: "pcs",
-    value: "₹2,04,000",
-    status: "In Stock",
-  },
-  {
-    sku: "SKU-1038",
-    name: "Hydraulic Oil 15W40",
-    category: "Consumable",
-    warehouse: "W2 – Stores",
-    qty: 28,
-    minLevel: 40,
-    unit: "litre",
-    value: "₹11,200",
-    status: "Low Stock",
-  },
-  {
-    sku: "SKU-1037",
-    name: "Safety Gloves (pair)",
-    category: "PPE",
-    warehouse: "W2 – Stores",
-    qty: 150,
-    minLevel: 60,
-    unit: "pair",
-    value: "₹18,000",
-    status: "In Stock",
-  },
-];
+// NOTE: Real inventory data is managed by Dashboard.jsx via InventoryService.getAll().
+// This standalone Stock component is kept for potential independent routing.
+// It renders an empty list — data must be injected via props if needed.
 
 const filters = [
   "All",
@@ -81,22 +16,8 @@ export default function Stock() {
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
 
-  const filteredStock = useMemo(() => {
-    const searchText = search.toLowerCase().trim();
-
-    return stockData.filter((item) => {
-      const matchesSearch =
-        item.name.toLowerCase().includes(searchText) ||
-        item.sku.toLowerCase().includes(searchText) ||
-        item.category.toLowerCase().includes(searchText) ||
-        item.warehouse.toLowerCase().includes(searchText);
-
-      const matchesFilter =
-        filter === "All" || item.status === filter;
-
-      return matchesSearch && matchesFilter;
-    });
-  }, [search, filter]);
+  // Standalone component: no data source. Real data lives in Dashboard.jsx.
+  const filteredStock = useMemo(() => [], [search, filter]);
 
   return (
     <section className="rounded-[15px] border border-[#e2e0d8] bg-[#fbfaf7] overflow-hidden">
@@ -150,7 +71,7 @@ export default function Stock() {
 
         {/* FILTERS */}
 
-        <div className="flex items-center gap-[5px]">
+        <div className="flex items-center gap-1.5">
 
           {filters.map((item) => (
 
@@ -160,15 +81,20 @@ export default function Stock() {
               onClick={() => setFilter(item)}
               className={`
                 h-[35px]
-                px-[12px]
+                min-w-[70px]
+                px-3.5
                 rounded-[8px]
                 border
                 font-mono
-                text-[9px]
+                text-[10px]
+                tracking-[0.05em]
+                inline-flex
+                items-center
+                justify-center
                 transition
                 ${
                   filter === item
-                    ? "border-[#d6d4ca] bg-[#eeece6] text-[#383a35]"
+                    ? "border-[#d6d4ca] bg-[#eeece6] text-[#383a35] font-medium"
                     : "border-[#e2e0d8] bg-[#fbfaf7] text-[#898c84] hover:bg-[#f3f2ed]"
                 }
               `}

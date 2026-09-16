@@ -16,4 +16,5 @@ public class LoginResponse {
     private Long tenantId;
     private String name;
     private String email;
+    private String role; // added
 }

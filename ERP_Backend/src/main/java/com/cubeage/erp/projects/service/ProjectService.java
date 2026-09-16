@@ -3,6 +3,7 @@ import com.cubeage.erp.projects.dto.request.*; import com.cubeage.erp.projects.d
 public interface ProjectService {
  ProjectResponse create(Long tenantId,CreateProjectRequest request);
  ProjectResponse update(Long tenantId,Long id,UpdateProjectRequest request);
+ void delete(Long tenantId,Long id);
  ProjectResponse get(Long tenantId,Long id);
  List<ProjectResponse> all(Long tenantId);
  List<ProjectResponse> search(Long tenantId,ProjectSearchRequest request);

@@ -6,6 +6,7 @@ const BASE = {
   SALES_MANAGER:      '/app/sales-manager',
   HR_MANAGER:         '/app/hr-manager',
   OPERATIONS_MANAGER: '/app/operations-manager',
+  INVENTORY_MANAGER:  '/app/inventory-manager',
   EMPLOYEE:           '/app/employee',
 }
 
@@ -149,6 +150,10 @@ export const ROUTES = {
   SUPER_ADMIN_REPORTS_FINANCE:              `${BASE.SUPER_ADMIN}/reports/finance`,
   SUPER_ADMIN_REPORTS_HR:                   `${BASE.SUPER_ADMIN}/reports/hr`,
   SUPER_ADMIN_REPORTS_PROJECTS:             `${BASE.SUPER_ADMIN}/reports/projects`,
+  SUPER_ADMIN_REPORTS_CUSTOM:               `${BASE.SUPER_ADMIN}/reports/custom-report`,
+
+  // Notifications
+  SUPER_ADMIN_NOTIFICATIONS:                `${BASE.SUPER_ADMIN}/notifications`,
 
   // Settings
   SUPER_ADMIN_SETTINGS:                     `${BASE.SUPER_ADMIN}/settings`,
@@ -176,6 +181,7 @@ export const ROUTES = {
   // ══════════════════════════════════════════════════════════════════════════════
   ADMIN:                                    BASE.ADMIN,
   ADMIN_DASHBOARD:                          `${BASE.ADMIN}/dashboard`,
+  ADMIN_USER_MANAGEMENT:                    `${BASE.ADMIN}/user-management`,
 
   // Company
   ADMIN_COMPANY:                            `${BASE.ADMIN}/company`,
@@ -286,6 +292,10 @@ export const ROUTES = {
   ADMIN_REPORTS_FINANCE:                    `${BASE.ADMIN}/reports/finance`,
   ADMIN_REPORTS_HR:                         `${BASE.ADMIN}/reports/hr`,
   ADMIN_REPORTS_PROJECTS:                   `${BASE.ADMIN}/reports/projects`,
+  ADMIN_REPORTS_CUSTOM:                     `${BASE.ADMIN}/reports/custom-report`,
+
+  // Notifications
+  ADMIN_NOTIFICATIONS:                      `${BASE.ADMIN}/notifications`,
 
   // Settings
   ADMIN_SETTINGS:                           `${BASE.ADMIN}/settings`,
@@ -308,6 +318,9 @@ export const ROUTES = {
   ADMIN_AI_CHATBOT:                         `${BASE.ADMIN}/ai/chatbot`,
   ADMIN_AI_REPORT_GENERATOR:                `${BASE.ADMIN}/ai/report-generator`,
 
+  // ── ADMIN ──
+  ADMIN_USER_MANAGEMENT: `${BASE.ADMIN}/user-management`,
+
   // ══════════════════════════════════════════════════════════════════════════════
   // FINANCE MANAGER
   // ══════════════════════════════════════════════════════════════════════════════
@@ -315,6 +328,10 @@ export const ROUTES = {
   FINANCE_MANAGER_DASHBOARD:                `${BASE.FINANCE_MANAGER}/dashboard`,
   FINANCE_MANAGER_FINANCE:                  `${BASE.FINANCE_MANAGER}/finance`,
   FINANCE_MANAGER_FINANCE_OVERVIEW:         `${BASE.FINANCE_MANAGER}/finance/overview`,
+  FINANCE_MANAGER_SALES:                    `${BASE.FINANCE_MANAGER}/sales`,
+  FINANCE_MANAGER_PURCHASE:                 `${BASE.FINANCE_MANAGER}/purchase`,
+  FINANCE_MANAGER_PROJECTS:                 `${BASE.FINANCE_MANAGER}/projects`,
+  FINANCE_MANAGER_DOCUMENTS:                `${BASE.FINANCE_MANAGER}/documents`,
   FINANCE_MANAGER_FINANCE_LEDGER:           `${BASE.FINANCE_MANAGER}/finance/ledger`,
   FINANCE_MANAGER_FINANCE_JOURNAL:          `${BASE.FINANCE_MANAGER}/finance/journal`,
   FINANCE_MANAGER_FINANCE_EXPENSES:         `${BASE.FINANCE_MANAGER}/finance/expenses`,
@@ -326,6 +343,7 @@ export const ROUTES = {
   FINANCE_MANAGER_REPORTS:                  `${BASE.FINANCE_MANAGER}/reports`,
   FINANCE_MANAGER_AI:                       `${BASE.FINANCE_MANAGER}/ai`,
   FINANCE_MANAGER_SETTINGS:                 `${BASE.FINANCE_MANAGER}/settings`,
+  FINANCE_MANAGER_NOTIFICATIONS:            `${BASE.FINANCE_MANAGER}/notifications`,
 
   // ══════════════════════════════════════════════════════════════════════════════
   // SALES MANAGER
@@ -333,6 +351,9 @@ export const ROUTES = {
   SALES_MANAGER:                            BASE.SALES_MANAGER,
   SALES_MANAGER_DASHBOARD:                  `${BASE.SALES_MANAGER}/dashboard`,
   SALES_MANAGER_CRM:                        `${BASE.SALES_MANAGER}/crm`,
+  SALES_MANAGER_INVENTORY:                  `${BASE.SALES_MANAGER}/inventory`,
+  SALES_MANAGER_PROJECTS:                   `${BASE.SALES_MANAGER}/projects`,
+  SALES_MANAGER_DOCUMENTS:                  `${BASE.SALES_MANAGER}/documents`,
   SALES_MANAGER_CRM_LEADS:                  `${BASE.SALES_MANAGER}/crm/leads`,
   SALES_MANAGER_CRM_CUSTOMERS:              `${BASE.SALES_MANAGER}/crm/customers`,
   SALES_MANAGER_CRM_PIPELINE:               `${BASE.SALES_MANAGER}/crm/pipeline`,
@@ -343,6 +364,7 @@ export const ROUTES = {
   SALES_MANAGER_REPORTS:                    `${BASE.SALES_MANAGER}/reports`,
   SALES_MANAGER_AI:                         `${BASE.SALES_MANAGER}/ai`,
   SALES_MANAGER_SETTINGS:                   `${BASE.SALES_MANAGER}/settings`,
+  SALES_MANAGER_NOTIFICATIONS:              `${BASE.SALES_MANAGER}/notifications`,
 
   // ══════════════════════════════════════════════════════════════════════════════
   // HR MANAGER
@@ -350,6 +372,8 @@ export const ROUTES = {
   HR_MANAGER:                               BASE.HR_MANAGER,
   HR_MANAGER_DASHBOARD:                     `${BASE.HR_MANAGER}/dashboard`,
   HR_MANAGER_HR:                            `${BASE.HR_MANAGER}/hr`,
+  HR_MANAGER_PROJECTS:                      `${BASE.HR_MANAGER}/projects`,
+  HR_MANAGER_DOCUMENTS:                     `${BASE.HR_MANAGER}/documents`,
   HR_MANAGER_HR_OVERVIEW:                   `${BASE.HR_MANAGER}/hr/overview`,
   HR_MANAGER_HR_EMPLOYEES:                  `${BASE.HR_MANAGER}/hr/employees`,
   HR_MANAGER_HR_ATTENDANCE:                 `${BASE.HR_MANAGER}/hr/attendance`,
@@ -359,6 +383,7 @@ export const ROUTES = {
   HR_MANAGER_REPORTS:                       `${BASE.HR_MANAGER}/reports`,
   HR_MANAGER_AI:                            `${BASE.HR_MANAGER}/ai`,
   HR_MANAGER_SETTINGS:                      `${BASE.HR_MANAGER}/settings`,
+  HR_MANAGER_NOTIFICATIONS:                 `${BASE.HR_MANAGER}/notifications`,
 
   // ══════════════════════════════════════════════════════════════════════════════
   // OPERATIONS MANAGER
@@ -373,15 +398,32 @@ export const ROUTES = {
   OPERATIONS_MANAGER_MANUFACTURING_WORK_ORDERS: `${BASE.OPERATIONS_MANAGER}/manufacturing/work-orders`,
   OPERATIONS_MANAGER_PURCHASE:              `${BASE.OPERATIONS_MANAGER}/purchase`,
   OPERATIONS_MANAGER_PROJECTS:              `${BASE.OPERATIONS_MANAGER}/projects`,
+  OPERATIONS_MANAGER_DOCUMENTS:             `${BASE.OPERATIONS_MANAGER}/documents`,
   OPERATIONS_MANAGER_REPORTS:               `${BASE.OPERATIONS_MANAGER}/reports`,
   OPERATIONS_MANAGER_AI:                    `${BASE.OPERATIONS_MANAGER}/ai`,
   OPERATIONS_MANAGER_SETTINGS:              `${BASE.OPERATIONS_MANAGER}/settings`,
+  OPERATIONS_MANAGER_NOTIFICATIONS:         `${BASE.OPERATIONS_MANAGER}/notifications`,
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // INVENTORY MANAGER
+  // ══════════════════════════════════════════════════════════════════════════════
+  INVENTORY_MANAGER:                         BASE.INVENTORY_MANAGER,
+  INVENTORY_MANAGER_DASHBOARD:               `${BASE.INVENTORY_MANAGER}/dashboard`,
+  INVENTORY_MANAGER_INVENTORY:               `${BASE.INVENTORY_MANAGER}/inventory`,
+  INVENTORY_MANAGER_INVENTORY_OVERVIEW:      `${BASE.INVENTORY_MANAGER}/inventory/overview`,
+  INVENTORY_MANAGER_INVENTORY_STOCK:         `${BASE.INVENTORY_MANAGER}/inventory/stock`,
+  INVENTORY_MANAGER_INVENTORY_WAREHOUSES:    `${BASE.INVENTORY_MANAGER}/inventory/warehouses`,
+  INVENTORY_MANAGER_DOCUMENTS:               `${BASE.INVENTORY_MANAGER}/documents`,
+  INVENTORY_MANAGER_AI:                      `${BASE.INVENTORY_MANAGER}/ai`,
+  INVENTORY_MANAGER_NOTIFICATIONS:           `${BASE.INVENTORY_MANAGER}/notifications`,
 
   // ══════════════════════════════════════════════════════════════════════════════
   // EMPLOYEE
   // ══════════════════════════════════════════════════════════════════════════════
   EMPLOYEE:                                 BASE.EMPLOYEE,
   EMPLOYEE_DASHBOARD:                       `${BASE.EMPLOYEE}/dashboard`,
+  EMPLOYEE_PROJECTS:                        `${BASE.EMPLOYEE}/projects`,
+  EMPLOYEE_AI:                              `${BASE.EMPLOYEE}/ai`,
   EMPLOYEE_PROFILE:                         `${BASE.EMPLOYEE}/profile`,
   EMPLOYEE_ATTENDANCE:                      `${BASE.EMPLOYEE}/attendance`,
   EMPLOYEE_LEAVE:                           `${BASE.EMPLOYEE}/leave`,

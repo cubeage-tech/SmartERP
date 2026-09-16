@@ -1,9 +1,8 @@
-import React from 'react'
+import React from "react";
+import PayablesAging from "./PayablesAging";
 
 const SupplierPayments = () => {
-  return (
-    <div>SupplierPayments</div>
-  )
-}
+  return <PayablesAging />;
+};
 
-export default SupplierPayments
+export default SupplierPayments;

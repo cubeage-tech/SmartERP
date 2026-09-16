@@ -12,21 +12,16 @@ import java.util.Set;
 public class UserResponse {
 
     private Long id;
-
     private Long tenantId;
-
     private String name;
-
     private String email;
-
+    private String position;
     private Boolean active;
 
     private Long branchId;
-
     private String branchName;
 
     private Long departmentId;
-
     private String departmentName;
 
     private Set<String> roles;

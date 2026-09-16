@@ -1,9 +1,8 @@
-import React from 'react'
+import React from "react";
+import Dashboard from "./Dashboard";
 
 const Overview = () => {
-  return (
-    <div>Overview</div>
-  )
-}
+  return <Dashboard />;
+};
 
-export default Overview
+export default Overview;

@@ -10,7 +10,10 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "document_ocr_extractions", indexes = {
-        @Index(name = "idx_ocr_company_status", columnList = "company_id,status")
+        @Index(name = "idx_document_ocr_tenant", columnList = "tenant_id"),
+        @Index(name = "idx_document_ocr_status", columnList = "tenant_id,status")
+}, uniqueConstraints = {
+        @UniqueConstraint(name = "uk_document_ocr", columnNames = {"document_id"})
 })
 @Getter
 @Setter
@@ -19,8 +22,8 @@ import java.time.LocalDateTime;
 @Builder
 public class OcrExtraction extends BaseEntity {
 
-    @Column(name = "company_id", nullable = false)
-    private Long companyId;
+    @Column(name = "tenant_id", nullable = false)
+    private Long tenantId;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "document_id", nullable = false, unique = true)

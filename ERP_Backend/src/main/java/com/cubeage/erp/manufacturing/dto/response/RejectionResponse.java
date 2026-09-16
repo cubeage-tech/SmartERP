@@ -1,4 +1,9 @@
 package com.cubeage.erp.manufacturing.dto.response;
 
-public class RejectionResponse {
-}
+public record RejectionResponse(
+        Long id,
+        String product,
+        String workOrderNumber,
+        String reason,
+        String quantity
+) {}

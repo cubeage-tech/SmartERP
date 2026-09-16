@@ -4,7 +4,7 @@ import com.cubeage.erp.superAdmin.dto.tenant.TenantResponse;
 import com.cubeage.erp.superAdmin.entity.Tenant;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("superAdminTenantMapper")
 public class TenantMapper {
     public TenantResponse toResponse(Tenant t) {
         return new TenantResponse(t.getId(), t.getCode(), t.getName(), t.getContactEmail(),

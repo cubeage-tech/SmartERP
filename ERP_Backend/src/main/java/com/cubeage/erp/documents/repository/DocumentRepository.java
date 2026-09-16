@@ -13,42 +13,44 @@ import java.util.Optional;
 
 public interface DocumentRepository extends JpaRepository<Document, Long> {
 
-    Optional<Document> findByIdAndCompanyId(Long id, Long companyId);
+    Optional<Document> findByIdAndTenantId(Long id, Long tenantId);
 
-    List<Document> findByCompanyIdOrderByCreatedAtDesc(Long companyId);
+    List<Document> findByTenantIdOrderByCreatedAtDesc(Long tenantId);
 
-    List<Document> findByCompanyIdAndUploadedByUserIdOrderByCreatedAtDesc(
-            Long companyId,
+    List<Document> findByTenantIdAndUploadedByUserIdOrderByCreatedAtDesc(
+            Long tenantId,
             Long uploadedByUserId
     );
 
-    long countByCompanyId(Long companyId);
+    long countByTenantId(Long tenantId);
 
-    long countByCompanyIdAndCreatedAtGreaterThanEqual(Long companyId, LocalDateTime startDate);
+    long countByTenantIdAndCreatedAtGreaterThanEqual(Long tenantId, LocalDateTime startDate);
 
-    long countByCompanyIdAndStatus(Long companyId, DocumentStatus status);
+    long countByTenantIdAndStatus(Long tenantId, DocumentStatus status);
 
-    long countByCompanyIdAndOcrCompletedTrue(Long companyId);
+    long countByTenantIdAndOcrCompletedTrue(Long tenantId);
 
     @Query("""
             select distinct d
             from Document d
             left join d.tags t
-            where d.companyId = :companyId
-              and (:search is null
-                   or lower(d.title) like lower(concat('%', :search, '%'))
-                   or lower(d.documentNumber) like lower(concat('%', :search, '%'))
-                   or lower(d.originalFileName) like lower(concat('%', :search, '%'))
-                   or lower(t.name) like lower(concat('%', :search, '%')))
+            where d.tenantId = :tenantId
+              and (cast(:search as string) is null
+                   or lower(d.title) like concat('%', lower(cast(:search as string)), '%')
+                   or lower(d.documentNumber) like concat('%', lower(cast(:search as string)), '%')
+                   or lower(d.originalFileName) like concat('%', lower(cast(:search as string)), '%')
+                   or lower(t.name) like concat('%', lower(cast(:search as string)), '%'))
               and (:type is null or d.type = :type)
+              and (cast(:category as string) is null or lower(d.category) = lower(cast(:category as string)))
             order by d.createdAt desc
             """)
     List<Document> search(
-            @Param("companyId") Long companyId,
+            @Param("tenantId") Long tenantId,
             @Param("search") String search,
-            @Param("type") DocumentType type
+            @Param("type") DocumentType type,
+            @Param("category") String category
     );
 
-    @Query("select coalesce(sum(d.fileSize), 0) from Document d where d.companyId = :companyId")
-    Long sumFileSizeByCompanyId(@Param("companyId") Long companyId);
+    @Query("select coalesce(sum(d.fileSize), 0) from Document d where d.tenantId = :tenantId")
+    Long sumFileSizeByTenantId(@Param("tenantId") Long tenantId);
 }

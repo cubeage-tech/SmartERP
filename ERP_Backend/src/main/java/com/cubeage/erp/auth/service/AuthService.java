@@ -39,8 +39,8 @@ public class AuthService {
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        UserPrincipal principal = (UserPrincipal) userDetailsService
-                .loadUserByUsername(request.getTenantId() + ":" + request.getEmail());
+        UserPrincipal principal =
+                userDetailsService.loadByEmail(request.getEmail());
 
         if (!passwordEncoder.matches(request.getPassword(), principal.getPassword())) {
             throw new UnauthorizedException("Invalid credentials");
@@ -57,7 +57,14 @@ public class AuthService {
                 .userId(principal.getId())
                 .tenantId(principal.getTenantId())
                 .name(principal.getName())
-                .email(principal.getUsername())
+                .email(principal.getUsername()) // added
+                .role(
+                        principal.getAuthorities().stream()
+                                .filter(a -> a.getAuthority().startsWith("ROLE_"))
+                                .map(a -> a.getAuthority().substring(5))
+                                .findFirst()
+                                .orElse(null)
+                )
                 .build();
     }
 

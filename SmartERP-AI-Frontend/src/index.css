@@ -2,35 +2,144 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Inter font token ──────────────────────────────────────────────────────── */
 :root {
-  --sans: 'DM Sans', system-ui, sans-serif;
-  --serif: 'DM Serif Display', Georgia, serif;
+  --font: 'Inter', system-ui, sans-serif;
 
-  font: 16px/145% var(--sans);
+  /* Override the old DM Serif / DM Sans CSS variables so any component
+     that still references var(--serif) or var(--sans) gets Inter */
+  --serif: 'Inter', system-ui, sans-serif;
+  --sans:  'Inter', system-ui, sans-serif;
+
+  font: 16px/145% var(--font);
+  font-weight: 400;
 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Global reset — force Inter on every element ───────────────────────────
+   Using !important ensures hardcoded inline `fontFamily` strings in JSX
+   style props (Georgia, Arial, DM Serif, monospace, etc.) are overridden
+   at the CSS layer without touching every individual file.               */
+*,
+*::before,
+*::after {
+  font-family: 'Inter', system-ui, sans-serif !important;
 }
 
 html,
 body {
   margin: 0;
   padding: 0;
-  font-family: var(--sans);
+  font-weight: 400;
 }
 
+/* ─── Typography scale ───────────────────────────────────────────────────────
+   These weights are the single source of truth. Because the universal rule
+   above already sets font-family, we only need font-weight here.          */
+
+/* Headings — Inter 700 */
 h1,
 h2,
-h3,
+h3 {
+  font-weight: 700;
+}
+
+/* Sub-headings — Inter 600 */
 h4,
 h5,
 h6 {
-  font-family: var(--serif);
+  font-weight: 600;
 }
 
+/* Body copy — Inter 400 (explicit reset so nested overrides don't leak) */
+p,
+span,
+li,
+td,
+th,
+label,
+input,
+textarea,
+select {
+  font-weight: 400;
+}
+
+/* Buttons — Inter 500 */
+button {
+  font-weight: 500;
+}
+
+/* Navigation — Inter 500 */
+nav a,
+nav button {
+  font-weight: 500;
+}
+
+/* ─── Root layout ────────────────────────────────────────────────────────── */
 #root {
   width: 100%;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
+}
+
+/* Remember Me Checkbox */
+
+.remember-checkbox {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #424840;
+  border-radius: 6px;
+  background: transparent;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: border-color 0.2s ease;
+}
+
+.remember-checkbox-checked {
+  border-color: #8fa184;
+}
+
+.remember-tick {
+  width: 15px;
+  height: 15px;
+}
+
+.remember-tick path {
+  stroke: #dfe8da;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+
+  animation: drawRememberTick 300ms ease-out forwards;
+}
+
+@keyframes drawRememberTick {
+  from {
+    stroke-dashoffset: 20;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Login input autofill fix */
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #20231f inset !important;
+  -webkit-text-fill-color: #e5e4df !important;
+  caret-color: #e5e4df !important;
+  transition: background-color 9999s ease-in-out 0s;
 }

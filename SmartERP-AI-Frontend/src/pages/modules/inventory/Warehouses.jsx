@@ -1,42 +1,76 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import InventoryService from "../../../core/services/modules/inventory.service";
 
-const warehouses = [
-  {
-    code: "W1",
-    name: "Main Warehouse",
-    location: "Pune MIDC",
-    area: "12,000 sqft",
-    capacity: 78,
-    skus: 234,
-    value: "₹82 L",
-  },
-  {
-    code: "W2",
-    name: "Stores",
-    location: "Pune MIDC",
-    area: "4,000 sqft",
-    capacity: 45,
-    skus: 86,
-    value: "₹18 L",
-  },
-  {
-    code: "W3",
-    name: "Finished Goods",
-    location: "Pune MIDC",
-    area: "8,000 sqft",
-    capacity: 62,
-    skus: 48,
-    value: "₹1.4 Cr",
-  },
-];
+/* ================================================================
+   WarehouseResponse backend fields:
+     id, code, name, location, area,
+     capacityPercent, skuCount, value, active
+================================================================ */
 
 export default function Warehouses() {
+  const [warehouses, setWarehouses] = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState(null);
+
+  const fetchWarehouses = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await InventoryService.getWarehouses();
+      setWarehouses(Array.isArray(res?.data) ? res.data : []);
+    } catch {
+      setError("Failed to load warehouses. Please try again.");
+      setWarehouses([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchWarehouses();
+  }, [fetchWarehouses]);
+
+  /* ---- LOADING ---- */
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <span className="font-mono text-[10px] text-[#999b94]">Loading warehouses…</span>
+      </div>
+    );
+  }
+
+  /* ---- ERROR ---- */
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 py-16">
+        <span className="font-mono text-[10px] text-[#b05a52]">{error}</span>
+        <button
+          type="button"
+          onClick={fetchWarehouses}
+          className="mt-1 rounded-lg border border-[#e0ded6] bg-[#fbfaf7] px-4 py-2 font-mono text-[9px] text-[#666a63] transition hover:bg-[#f0efe9]"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  /* ---- EMPTY ---- */
+  if (warehouses.length === 0) {
+    return (
+      <div className="py-12 text-center font-mono text-[10px] text-[#999b94]">
+        No warehouses found.
+      </div>
+    );
+  }
+
+  /* ---- LIST ---- */
   return (
     <div className="w-full">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {warehouses.map((warehouse) => (
           <WarehouseCard
-            key={warehouse.code}
+            key={warehouse.id ?? warehouse.code}
             warehouse={warehouse}
           />
         ))}
@@ -46,6 +80,8 @@ export default function Warehouses() {
 }
 
 function WarehouseCard({ warehouse }) {
+  const capacity = Number(warehouse.capacityPercent ?? 0);
+
   return (
     <div
       className="
@@ -87,10 +123,9 @@ function WarehouseCard({ warehouse }) {
         </div>
 
         <span
-          className="
+          className={`
             mt-[16px]
             rounded-[7px]
-            bg-[#e2ebde]
             px-[9px]
             py-[5px]
             font-mono
@@ -98,29 +133,34 @@ function WarehouseCard({ warehouse }) {
             uppercase
             leading-none
             tracking-[0.08em]
-            text-[#63755d]
-          "
+            ${warehouse.active
+              ? "bg-[#e2ebde] text-[#63755d]"
+              : "bg-[#ede9e3] text-[#888078]"
+            }
+          `}
         >
-          Active
+          {warehouse.active ? "Active" : "Inactive"}
         </span>
       </div>
 
       {/* LOCATION */}
-      <div
-        className="
-          mt-[7px]
-          font-mono
-          text-[8px]
-          leading-none
-          text-[#969990]
-        "
-      >
-        {warehouse.location}
-        <span className="mx-[5px] text-[#c5c5bf]">
-          ·
-        </span>
-        {warehouse.area}
-      </div>
+      {(warehouse.location || warehouse.area) && (
+        <div
+          className="
+            mt-[7px]
+            font-mono
+            text-[8px]
+            leading-none
+            text-[#969990]
+          "
+        >
+          {warehouse.location}
+          {warehouse.location && warehouse.area && (
+            <span className="mx-[5px] text-[#c5c5bf]">·</span>
+          )}
+          {warehouse.area}
+        </div>
+      )}
 
       {/* CAPACITY */}
       <div className="mt-[20px]">
@@ -144,7 +184,7 @@ function WarehouseCard({ warehouse }) {
               text-[#73766e]
             "
           >
-            {warehouse.capacity}%
+            {capacity}%
           </span>
         </div>
 
@@ -160,9 +200,7 @@ function WarehouseCard({ warehouse }) {
         >
           <div
             className="h-full rounded-full bg-[#91a985]"
-            style={{
-              width: `${warehouse.capacity}%`,
-            }}
+            style={{ width: `${Math.min(capacity, 100)}%` }}
           />
         </div>
       </div>
@@ -186,7 +224,7 @@ function WarehouseCard({ warehouse }) {
               text-[#242622]
             "
           >
-            {warehouse.skus}
+            {warehouse.skuCount ?? 0}
           </div>
 
           <div
@@ -219,9 +257,10 @@ function WarehouseCard({ warehouse }) {
               text-[18px]
               leading-none
               text-[#242622]
+              truncate
             "
           >
-            {warehouse.value}
+            {warehouse.value ?? "—"}
           </div>
 
           <div

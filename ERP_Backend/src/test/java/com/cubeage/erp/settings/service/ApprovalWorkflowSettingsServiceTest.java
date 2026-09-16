@@ -3,7 +3,6 @@ package com.cubeage.erp.settings.service;
 import com.cubeage.erp.admin.entity.Role;
 import com.cubeage.erp.admin.repository.RoleRepository;
 import com.cubeage.erp.settings.dto.approval.*;
-import com.cubeage.erp.settings.entity.ApprovalWorkflowSetting;
 import com.cubeage.erp.settings.enums.*;
 import com.cubeage.erp.settings.mapper.ApprovalWorkflowMapper;
 import com.cubeage.erp.settings.repository.ApprovalWorkflowSettingRepository;

@@ -1,4 +1,10 @@
 package com.cubeage.erp.manufacturing.dto.response;
 
-public class WorkOrderProgressResponse {
-}
+import com.cubeage.erp.manufacturing.enums.WorkOrderStatus;
+
+public record WorkOrderProgressResponse(
+        Long id,
+        String workOrderNumber,
+        WorkOrderStatus status,
+        Integer progress
+) {}

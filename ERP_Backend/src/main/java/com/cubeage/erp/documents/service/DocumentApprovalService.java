@@ -8,17 +8,17 @@ import java.util.List;
 public interface DocumentApprovalService {
 
     DocumentApprovalResponse create(
-            Long companyId,
+            Long tenantId,
             Long userId,
             String userName,
             DocumentApprovalRequest request
     );
 
-    List<DocumentApprovalResponse> getPending(Long companyId);
+    List<DocumentApprovalResponse> getPending(Long tenantId);
 
-    List<DocumentApprovalResponse> getMyPending(Long companyId, Long userId);
+    List<DocumentApprovalResponse> getMyPending(Long tenantId, Long userId);
 
-    DocumentApprovalResponse approve(Long companyId, Long approvalId, String comment);
+    DocumentApprovalResponse approve(Long tenantId, Long approvalId, String comment);
 
-    DocumentApprovalResponse reject(Long companyId, Long approvalId, String comment);
+    DocumentApprovalResponse reject(Long tenantId, Long approvalId, String comment);
 }

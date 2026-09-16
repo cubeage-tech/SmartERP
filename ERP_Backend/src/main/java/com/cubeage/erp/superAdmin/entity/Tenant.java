@@ -9,7 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 
-@Entity
+@Entity(name = "SuperAdminTenant")
 @Table(name = "sa_tenants", uniqueConstraints = @UniqueConstraint(name = "uk_sa_tenant_code", columnNames = "code"))
 @Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
 public class Tenant {

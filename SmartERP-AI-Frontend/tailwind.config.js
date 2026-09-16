@@ -7,8 +7,16 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans:  ['DM Sans', 'system-ui', 'sans-serif'],
-        serif: ['DM Serif Display', 'Georgia', 'serif'],
+        sans:  ['Inter', 'system-ui', 'sans-serif'],
+        serif: ['Inter', 'system-ui', 'sans-serif'], // headings use Inter 700 via CSS
+      },
+      fontWeight: {
+        heading: '700',
+        subheading: '600',
+        body: '400',
+        button: '500',
+        'button-strong': '600',
+        nav: '500',
       },
     },
   },

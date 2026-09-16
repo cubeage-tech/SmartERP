@@ -1,43 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import financeService from "../../../core/services/modules/finance.service";
 
-const Alerts = () => {
+const Alerts = ({ onDismiss: onParentDismiss }) => {
+    const [alerts, setAlerts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [dismissingId, setDismissingId] = useState(null);
 
-    const [alerts, setAlerts] = useState([
-        {
-            id: 1,
-            level: "HIGH",
-            type: "FRAUD",
-            time: "2H AGO",
-            title:
-                "Duplicate vendor invoice detected: BILL-127 matches BILL-091 (Tata Steel)"
-        },
-        {
-            id: 2,
-            level: "MEDIUM",
-            type: "ANOMALY",
-            time: "1D AGO",
-            title:
-                "Unusual payment pattern: 3 payments to same bank account in 24h"
-        },
-        {
-            id: 3,
-            level: "LOW",
-            type: "COMPLIANCE",
-            time: "3D AGO",
-            title:
-                "GST filing due in 5 days — Q2 GSTR-1 not submitted"
+    const fetchAlerts = useCallback(async () => {
+        setLoading(true);
+        setError("");
+        try {
+            const data = await financeService.getActiveAlerts();
+            setAlerts(Array.isArray(data) ? data : []);
+        } catch (err) {
+            setError(err?.response?.data?.message || err?.message || "Failed to load financial alerts");
+        } finally {
+            setLoading(false);
         }
-    ]);
+    }, []);
 
+    useEffect(() => {
+        fetchAlerts();
+    }, [fetchAlerts]);
 
-    const dismissAlert = (id) => {
-
-        setAlerts((currentAlerts) =>
-            currentAlerts.filter((alert) => alert.id !== id)
-        );
-
+    const dismissAlert = async (id) => {
+        setDismissingId(id);
+        setError("");
+        try {
+            await financeService.dismissAlert(id);
+            setAlerts((current) => current.filter((a) => a.id !== id));
+            if (onParentDismiss) onParentDismiss(id);
+        } catch (err) {
+            setError(err?.response?.data?.message || err?.message || "Failed to dismiss alert on server");
+        } finally {
+            setDismissingId(null);
+        }
     };
-
 
     return (
         <div className="w-full">
@@ -54,48 +53,72 @@ const Alerts = () => {
                 mb-5
                 flex
                 items-center
+                justify-between
                 gap-5
             ">
 
-                <div className="
-                    w-12
-                    h-12
-                    rounded-[14px]
-                    bg-[#22291f]
-                    flex
-                    items-center
-                    justify-center
-                    text-[#9caf8c]
-                    text-xl
-                    shrink-0
-                ">
-                    ♢
+                <div className="flex items-center gap-5">
+                    <div className="
+                        w-12
+                        h-12
+                        rounded-[14px]
+                        bg-[#22291f]
+                        flex
+                        items-center
+                        justify-center
+                        text-[#9caf8c]
+                        text-xl
+                        shrink-0
+                    ">
+                        ♢
+                    </div>
+
+                    <div>
+                        <h2 className="
+                            font-serif
+                            text-[20px]
+                            text-white
+                            mb-1
+                        ">
+                            AI Fraud &amp; Compliance Monitor
+                        </h2>
+
+                        <p className="
+                            font-mono
+                            text-[12px]
+                            text-[#737a73]
+                        ">
+                            Active audit scanning across journal entries and financial records.
+                        </p>
+                    </div>
                 </div>
 
-
-                <div>
-
-                    <h2 className="
-                        font-serif
-                        text-[20px]
-                        text-white
-                        mb-1
-                    ">
-                        AI Fraud &amp; Compliance Monitor
-                    </h2>
-
-                    <p className="
-                        font-mono
-                        text-[12px]
-                        text-[#737a73]
-                    ">
-                        Scanning 892 journal entries and 38 vendor
-                        payments this week.
-                    </p>
-
-                </div>
+                <button
+                    onClick={fetchAlerts}
+                    title="Refresh Alerts"
+                    className="
+                        rounded-xl border border-[#333b30] bg-[#1a2018]
+                        px-3 py-2 font-mono text-[11px] text-[#9caf8c]
+                        transition hover:bg-[#252e22]
+                    "
+                >
+                    ↻ Refresh
+                </button>
 
             </div>
+
+            {/* ERROR BANNER */}
+            {error && (
+                <div className="mb-4 flex items-center justify-between rounded-[16px] border border-[#f5c6c6] bg-[#fde8e8] px-5 py-3 text-[#a02020]">
+                    <span className="font-mono text-[12px]">⚠️ {error}</span>
+                    <button
+                        onClick={fetchAlerts}
+                        className="font-mono text-[11px] underline hover:no-underline"
+                    >
+                        Retry
+                    </button>
+                </div>
+            )}
 
 
             {/* =====================================================
@@ -104,7 +127,21 @@ const Alerts = () => {
 
             <div className="space-y-4">
 
-                {alerts.length === 0 ? (
+                {loading ? (
+                    <div className="
+                        bg-white
+                        border
+                        border-[#e3e0d9]
+                        rounded-[20px]
+                        py-16
+                        text-center
+                        font-mono
+                        text-[12px]
+                        text-[#91a0a0]
+                    ">
+                        Scanning active alerts from backend...
+                    </div>
+                ) : alerts.length === 0 ? (
 
                     <div className="
                         bg-white
@@ -115,7 +152,7 @@ const Alerts = () => {
                         text-center
                     ">
 
-                        <div className="text-3xl mb-3">
+                        <div className="text-3xl mb-3 text-[#4caf50]">
                             ✓
                         </div>
 
@@ -123,6 +160,7 @@ const Alerts = () => {
                             font-serif
                             text-[20px]
                             mb-2
+                            text-[#11130f]
                         ">
                             No active alerts
                         </h3>
@@ -132,7 +170,7 @@ const Alerts = () => {
                             text-[12px]
                             text-[#929999]
                         ">
-                            All finance alerts have been handled.
+                            All finance alerts have been handled or none are currently open.
                         </p>
 
                     </div>
@@ -145,6 +183,7 @@ const Alerts = () => {
                             key={alert.id}
                             alert={alert}
                             onDismiss={dismissAlert}
+                            isDismissing={dismissingId === alert.id}
                         />
 
                     ))
@@ -164,7 +203,8 @@ const Alerts = () => {
 
 const AlertCard = ({
     alert,
-    onDismiss
+    onDismiss,
+    isDismissing
 }) => {
 
     const levelStyles = {
@@ -228,6 +268,7 @@ const AlertCard = ({
                     justify-center
                     font-mono
                     text-[10px]
+                    font-semibold
                     ${style.badge}
                 `}>
                     {alert.level}
@@ -257,6 +298,12 @@ const AlertCard = ({
                         {alert.type}
                         <span className="mx-2">·</span>
                         {alert.time}
+                        {alert.status && (
+                            <>
+                                <span className="mx-2">·</span>
+                                <span className="uppercase text-[#8d9696]">{alert.status}</span>
+                            </>
+                        )}
                     </p>
 
                 </div>
@@ -277,6 +324,7 @@ const AlertCard = ({
 
                 <button
                     onClick={() => onDismiss(alert.id)}
+                    disabled={isDismissing}
                     className="
                         px-4
                         py-2.5
@@ -290,9 +338,10 @@ const AlertCard = ({
                         hover:text-[#11130f]
                         hover:bg-[#f7f6f2]
                         transition
+                        disabled:opacity-50
                     "
                 >
-                    Dismiss
+                    {isDismissing ? "Dismissing..." : "Dismiss"}
                 </button>
 
                 <button

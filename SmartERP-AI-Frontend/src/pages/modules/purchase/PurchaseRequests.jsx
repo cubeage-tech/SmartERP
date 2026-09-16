@@ -1,9 +1,8 @@
-import React from 'react'
+import React from "react";
+import PurchaseOrders from "./PurchaseOrders";
 
 const PurchaseRequests = () => {
-  return (
-    <div>PurchaseRequests</div>
-  )
-}
+  return <PurchaseOrders />;
+};
 
-export default PurchaseRequests
+export default PurchaseRequests;

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import RoleDashboardService from "../../core/services/modules/roleDashboard.service";
 import {
   Sparkles,
   ArrowUpRight,
@@ -9,38 +10,13 @@ import {
    SALES DASHBOARD DATA
 ========================================================= */
 
-const stats = [
-  {
-    label: "PIPELINE VALUE",
-    value: "₹3.2Cr",
-    footer: "+18.2%",
-  },
-  {
-    label: "CONVERSION RATE",
-    value: "68%",
-    footer: "+5.1%",
-  },
-  {
-    label: "INVOICED MTD",
-    value: "₹1.4Cr",
-    footer: "+9.4%",
-  },
-  {
-    label: "30D FORECAST",
-    value: "₹1.8Cr",
-    footer: "82% confidence",
-  },
-  {
-    label: "TOP AI LEAD",
-    value: "Nexus Corp",
-    footer: "Score: 94",
-  },
-  {
-    label: "OVERDUE FOLLOW-UPS",
-    value: "12",
-    footer: "Due today",
-    warning: true,
-  },
+const fallbackStats = [
+  { label: "REVENUE MTD", value: "₹0", footer: "Loading unavailable" },
+  { label: "REVENUE CHANGE", value: "0%", footer: "vs last month" },
+  { label: "RECEIVABLES", value: "₹0", footer: "Outstanding invoices" },
+  { label: "PENDING INVOICES", value: "0", footer: "Awaiting payment" },
+  { label: "ORDERS YTD", value: "₹0", footer: "Year-to-date value" },
+  { label: "ON-TIME DELIVERY", value: "0%", footer: "Delivery performance" },
 ];
 
 /* =========================================================
@@ -75,17 +51,6 @@ const initialApprovals = [
     urgent: false,
     status: "PENDING",
   },
-];
-
-/* =========================================================
-   QUICK ACTIONS
-========================================================= */
-
-const quickActions = [
-  "New Lead",
-  "Create Quotation",
-  "New Invoice",
-  "Follow-up Task",
 ];
 
 /* =========================================================
@@ -816,100 +781,113 @@ function PendingApprovals() {
 }
 
 /* =========================================================
-   QUICK ACTIONS
-========================================================= */
-
-function QuickActions() {
-  return (
-    <section
-      className="
-        overflow-hidden
-        rounded-[20px]
-        border
-        border-[#e3e0d9]
-        bg-white
-      "
-    >
-      <div
-        className="
-          border-b
-          border-[#e5e2db]
-          px-7
-          py-6
-        "
-      >
-        <h2
-          className="
-            font-serif
-            text-[22px]
-            leading-none
-            text-[#161815]
-          "
-        >
-          Quick Actions
-        </h2>
-      </div>
-
-      <div className="space-y-3 px-6 py-6">
-        {quickActions.map(
-          (action) => (
-            <button
-              key={action}
-              type="button"
-              className="
-                group
-                flex
-                w-full
-                items-center
-                justify-between
-                rounded-[15px]
-                border
-                border-[#e4e1da]
-                bg-white
-                px-4
-                py-4
-                text-left
-                font-sans
-                text-[13px]
-                text-[#777d78]
-                transition-all
-                duration-200
-                hover:-translate-y-[1px]
-                hover:border-[#d5d2ca]
-                hover:bg-[#f1f1ec]
-                hover:text-[#262a26]
-              "
-            >
-              <span>{action}</span>
-
-              <ChevronRight
-                size={14}
-                strokeWidth={1.6}
-                className="
-                  text-[#b7bbb7]
-                  transition-all
-                  duration-200
-                  group-hover:translate-x-1
-                  group-hover:text-[#656b65]
-                "
-              />
-            </button>
-          )
-        )}
-      </div>
-    </section>
-  );
-}
-
-/* =========================================================
    SALES DASHBOARD
 ========================================================= */
 
 export default function SalesDashboard() {
-  const [
-    quickActionOpen,
-    setQuickActionOpen,
-  ] = useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        setError("");
+
+        const response =
+          await RoleDashboardService.getSalesDashboard();
+
+        setDashboardData(response.data);
+      } catch (requestError) {
+        console.error(
+          "Unable to load Sales dashboard:",
+          requestError
+        );
+
+        setError(
+          requestError?.response?.data?.message ||
+          "Unable to load sales dashboard data."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
+
+  const formatAmount = (amount, currency = "INR") =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(Number(amount || 0));
+
+  const stats = dashboardData
+    ? [
+        {
+          label: "REVENUE MTD",
+          value: formatAmount(
+            dashboardData.revenueMtd,
+            dashboardData.currency
+          ),
+          footer: "Current month invoiced value",
+        },
+        {
+          label: "REVENUE CHANGE",
+          value: `${Number(
+            dashboardData.revenueChangePercent || 0
+          ).toFixed(1)}%`,
+          footer: "Compared with last month",
+          warning: Number(
+            dashboardData.revenueChangePercent || 0
+          ) < 0,
+        },
+        {
+          label: "RECEIVABLES",
+          value: formatAmount(
+            dashboardData.outstandingAmount,
+            dashboardData.currency
+          ),
+          footer: "Outstanding invoice balance",
+          warning: Number(
+            dashboardData.outstandingAmount || 0
+          ) > 0,
+        },
+        {
+          label: "PENDING INVOICES",
+          value: Number(
+            dashboardData.pendingInvoiceCount || 0
+          ).toLocaleString("en-IN"),
+          footer: "Invoices awaiting payment",
+          warning: Number(
+            dashboardData.pendingInvoiceCount || 0
+          ) > 0,
+        },
+        {
+          label: "ORDERS YTD",
+          value: formatAmount(
+            dashboardData.ordersYtdAmount,
+            dashboardData.currency
+          ),
+          footer: `${Number(
+            dashboardData.orderCountYtd || 0
+          ).toLocaleString("en-IN")} orders this year`,
+        },
+        {
+          label: "ON-TIME DELIVERY",
+          value: `${Number(
+            dashboardData.onTimeDeliveryPercentage || 0
+          ).toFixed(1)}%`,
+          footer: `${Number(
+            dashboardData.onTimeDeliveryChangePoints || 0
+          ).toFixed(1)}pp vs previous period`,
+          warning: Number(
+            dashboardData.onTimeDeliveryPercentage || 0
+          ) < 90,
+        },
+      ]
+    : fallbackStats;
 
   return (
     <main
@@ -930,6 +908,18 @@ export default function SalesDashboard() {
           max-w-[1540px]
         "
       >
+
+        {loading && (
+  <div className="rounded-[16px] border border-[#e3e0d9] bg-white px-5 py-4 text-sm text-[#6d7069]">
+    Loading sales dashboard…
+  </div>
+)}
+
+{error && (
+  <div className="mb-6 rounded-[16px] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+    {error}
+  </div>
+)}
         {/* =================================================
             HEADER
         ================================================== */}
@@ -1035,104 +1025,6 @@ export default function SalesDashboard() {
               AI Active
             </button>
 
-            <button
-              type="button"
-              onClick={() =>
-                setQuickActionOpen(
-                  (value) => !value
-                )
-              }
-              className="
-                group
-                flex
-                h-[43px]
-                items-center
-                gap-2
-                rounded-[14px]
-                bg-[#151714]
-                px-5
-                font-sans
-                text-[10px]
-                font-medium
-                uppercase
-                tracking-[0.08em]
-                text-white
-                transition-all
-                duration-200
-                hover:-translate-y-[1px]
-                hover:bg-[#292c27]
-                hover:shadow-[0_7px_18px_rgba(20,23,20,0.12)]
-              "
-            >
-              + Quick Action
-
-              <ArrowUpRight
-                size={12}
-                strokeWidth={1.7}
-                className="
-                  transition-transform
-                  duration-200
-                  group-hover:-translate-y-[1px]
-                  group-hover:translate-x-[1px]
-                "
-              />
-            </button>
-
-            {quickActionOpen && (
-              <div
-                className="
-                  absolute
-                  right-0
-                  top-[52px]
-                  z-30
-                  w-[215px]
-                  rounded-[16px]
-                  border
-                  border-[#e1ded7]
-                  bg-white
-                  p-2
-                  shadow-[0_14px_35px_rgba(20,24,20,0.12)]
-                "
-              >
-                {quickActions.map(
-                  (action) => (
-                    <button
-                      key={action}
-                      type="button"
-                      onClick={() =>
-                        setQuickActionOpen(
-                          false
-                        )
-                      }
-                      className="
-                        flex
-                        w-full
-                        items-center
-                        justify-between
-                        rounded-[10px]
-                        px-3
-                        py-3
-                        text-left
-                        font-sans
-                        text-[10px]
-                        text-[#737a74]
-                        transition-colors
-                        duration-150
-                        hover:bg-[#f1f1ec]
-                        hover:text-[#222620]
-                      "
-                    >
-                      {action}
-
-                      <ChevronRight
-                        size={12}
-                        strokeWidth={1.6}
-                      />
-                    </button>
-                  )
-                )}
-              </div>
-            )}
           </div>
         </section>
 
@@ -1180,7 +1072,7 @@ export default function SalesDashboard() {
         </section>
 
         {/* =================================================
-            APPROVALS + QUICK ACTIONS
+            APPROVALS
         ================================================== */}
 
         <section
@@ -1194,7 +1086,6 @@ export default function SalesDashboard() {
         >
           <PendingApprovals />
 
-          <QuickActions />
         </section>
       </div>
     </main>

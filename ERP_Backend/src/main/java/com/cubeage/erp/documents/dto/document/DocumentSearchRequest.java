@@ -8,9 +8,10 @@ import java.time.LocalDate;
 public record DocumentSearchRequest(
         String search,
         DocumentType type,
+        String category,
         DocumentStatus status,
+        Long uploadedByUserId,
         LocalDate fromDate,
-        LocalDate toDate,
-        Long uploadedByUserId
+        LocalDate toDate
 ) {
 }

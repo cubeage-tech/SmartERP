@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface DocumentTagRepository extends JpaRepository<DocumentTag, Long> {
-    List<DocumentTag> findByDocument_IdOrderByNameAsc(Long documentId);
-    void deleteByDocument_Id(Long documentId);
+
+    List<DocumentTag> findByDocument_IdAndTenantId(Long documentId, Long tenantId);
 }

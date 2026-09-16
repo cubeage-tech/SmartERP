@@ -1,4 +1,3 @@
 package com.cubeage.erp.manufacturing.dto.response;
 
-public class WorkOrderDetailsResponse {
-}
+public class WorkOrderDetailsResponse{}

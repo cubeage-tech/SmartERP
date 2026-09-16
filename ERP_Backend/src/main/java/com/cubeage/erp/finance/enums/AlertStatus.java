@@ -1,4 +1,3 @@
 package com.cubeage.erp.finance.enums;
 
-public enum AlertStatus {
-}
+public enum AlertStatus { OPEN, DISMISSED }

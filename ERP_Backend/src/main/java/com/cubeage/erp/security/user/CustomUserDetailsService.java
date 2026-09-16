@@ -38,4 +38,12 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("Active user not found"));
     }
 
+    // added
+    public UserPrincipal loadByEmail(String email) {
+        return userRepository.findByEmailIgnoreCase(email)
+                .filter(user -> Boolean.TRUE.equals(user.getActive()))
+                .map(UserPrincipal::from)
+                .orElseThrow(() -> new UsernameNotFoundException("Invalid email or password"));
+    }
+
 }

@@ -7,11 +7,11 @@ import java.util.List;
 
 public interface DocumentOcrService {
 
-    OcrExtractionResponse process(Long companyId, Long documentId);
+    OcrExtractionResponse process(Long tenantId, Long documentId);
 
-    List<OcrExtractionResponse> getAll(Long companyId);
+    List<OcrExtractionResponse> getAll(Long tenantId);
 
-    OcrExtractionResponse getLatest(Long companyId);
+    OcrExtractionResponse getLatest(Long tenantId);
 
-    OcrStatsResponse getStats(Long companyId);
+    OcrStatsResponse getStats(Long tenantId);
 }

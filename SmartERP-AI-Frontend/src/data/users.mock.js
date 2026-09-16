@@ -48,6 +48,13 @@ export const dummyUsers = [
     role: 'operationsManager',
   },
   {
+    id: 'u-inventory-manager',
+    name: 'Vikram Patel',
+    email: 'inventory@smarterp.ai',
+    password: DEMO_PASSWORD,
+    role: 'inventoryManager',
+  },
+  {
     id: 'u-employee',
     name: 'Arjun Rao',
     email: 'employee@smarterp.ai',

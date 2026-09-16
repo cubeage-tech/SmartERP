@@ -1,47 +1,6 @@
-import React, { useState } from "react";
-
-const initialLeaves = [
-    {
-        id: "LV-2026-0389",
-        employee: "Rohan Verma",
-        dept: "Sales",
-        type: "Casual Leave",
-        from: "11 Aug 2026",
-        to: "12 Aug 2026",
-        days: "2d",
-        status: "PENDING",
-    },
-    {
-        id: "LV-2026-0388",
-        employee: "Smita Gupta",
-        dept: "HR",
-        type: "Sick Leave",
-        from: "09 Aug 2026",
-        to: "10 Aug 2026",
-        days: "2d",
-        status: "APPROVED",
-    },
-    {
-        id: "LV-2026-0387",
-        employee: "Aditya Kumar",
-        dept: "IT",
-        type: "Earned Leave",
-        from: "15 Aug 2026",
-        to: "20 Aug 2026",
-        days: "4d",
-        status: "PENDING",
-    },
-    {
-        id: "LV-2026-0386",
-        employee: "Kavya Reddy",
-        dept: "Marketing",
-        type: "Casual Leave",
-        from: "08 Aug 2026",
-        to: "08 Aug 2026",
-        days: "1d",
-        status: "REJECTED",
-    },
-];
+import React, { useState, useEffect } from "react";
+import hrApi from "./hrApiClient";
+import ViewLeaveModal from "../employee/ViewLeaveModal";
 
 const statusStyle = {
     PENDING: "bg-[#eeeef2] text-[#717389]",
@@ -50,26 +9,59 @@ const statusStyle = {
 };
 
 export default function LeaveManagement() {
-    const [leaves, setLeaves] = useState(initialLeaves);
+    const [leaves, setLeaves] = useState([]);
+    const [selectedLeave, setSelectedLeave] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const fetchLeaves = () => {
+        setLoading(true);
+        hrApi.getLeaves()
+            .then((res) => {
+                setLeaves(Array.isArray(res.data) ? res.data : []);
+                setError(null);
+            })
+            .catch((err) => {
+                console.error("Failed to load leave requests:", err);
+                setError(err.message || "Failed to load leave requests");
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    };
+
+    useEffect(() => {
+        fetchLeaves();
+    }, []);
 
     const handleApprove = (id) => {
-        setLeaves((currentLeaves) =>
-            currentLeaves.map((leave) =>
-                leave.id === id
-                    ? { ...leave, status: "APPROVED" }
-                    : leave
-            )
-        );
+        if (!window.confirm("Are you sure you want to approve this leave request?")) {
+            return;
+        }
+        hrApi.approveLeave(id)
+            .then(() => {
+                fetchLeaves();
+            })
+            .catch((err) => {
+                console.error("Failed to approve leave:", err);
+                const msg = err.response?.data?.detail || err.response?.data?.message || err.message || "Failed to approve leave";
+                alert(`Approval failed: ${msg}`);
+            });
     };
 
     const handleReject = (id) => {
-        setLeaves((currentLeaves) =>
-            currentLeaves.map((leave) =>
-                leave.id === id
-                    ? { ...leave, status: "REJECTED" }
-                    : leave
-            )
-        );
+        if (!window.confirm("Are you sure you want to reject this leave request?")) {
+            return;
+        }
+        hrApi.rejectLeave(id)
+            .then(() => {
+                fetchLeaves();
+            })
+            .catch((err) => {
+                console.error("Failed to reject leave:", err);
+                const msg = err.response?.data?.detail || err.response?.data?.message || err.message || "Failed to reject leave";
+                alert(`Rejection failed: ${msg}`);
+            });
     };
 
     const pendingCount = leaves.filter(
@@ -138,7 +130,7 @@ export default function LeaveManagement() {
                             text-[#8f9694]
                         "
                     >
-                        {pendingCount} pending approval
+                        {loading ? "..." : `${pendingCount} pending approval`}
                     </span>
 
                 </div>
@@ -184,9 +176,40 @@ export default function LeaveManagement() {
 
                     </div>
 
+                    {/* LOADING STATE */}
+                    {loading && (
+                        <div className="px-6 py-12 text-center font-mono text-[11px] text-[#969e9a]">
+                            Loading leave requests from API...
+                        </div>
+                    )}
+
+                    {/* ERROR STATE */}
+                    {!loading && error && (
+                        <div className="px-6 py-12 text-center font-mono text-[11px] text-[#8a635b]">
+                            Error loading leave requests: {error}
+                        </div>
+                    )}
+
+                    {/* EMPTY STATE */}
+                    {!loading && !error && leaves.length === 0 && (
+                        <div className="px-6 py-12 text-center font-mono text-[11px] text-[#969e9a]">
+                            No leave requests found in database.
+                        </div>
+                    )}
 
                     {/* TABLE ROWS */}
-                    {leaves.map((leave) => (
+                    {!loading && !error && leaves.map((leave) => {
+                        const displayId = leave.leaveCode || leave.id;
+                        const displayEmployee = leave.employee || leave.employeeName || "—";
+                        const displayDept = leave.dept || leave.department || "—";
+                        const displayType = leave.type || leave.leaveType || "—";
+                        const displayFrom = leave.from || (leave.startDate ? String(leave.startDate) : "—");
+                        const displayTo = leave.to || (leave.endDate ? String(leave.endDate) : "—");
+                        const displayDays = leave.days || "1d";
+                        const displayStatus = leave.status || "PENDING";
+                        const statusBadgeClass = statusStyle[displayStatus] || "bg-[#eeeef2] text-[#717389]";
+
+                        return (
 
                         <div
                             key={leave.id}
@@ -213,7 +236,7 @@ export default function LeaveManagement() {
                                     text-[#9ca3ad]
                                 "
                             >
-                                {leave.id}
+                                {displayId}
                             </div>
 
 
@@ -225,7 +248,7 @@ export default function LeaveManagement() {
                                     text-[#171916]
                                 "
                             >
-                                {leave.employee}
+                                {displayEmployee}
                             </div>
 
 
@@ -236,7 +259,7 @@ export default function LeaveManagement() {
                                     text-[#68716a]
                                 "
                             >
-                                {leave.dept}
+                                {displayDept}
                             </div>
 
 
@@ -247,7 +270,7 @@ export default function LeaveManagement() {
                                     text-[#68716a]
                                 "
                             >
-                                {leave.type}
+                                {displayType}
                             </div>
 
 
@@ -258,7 +281,7 @@ export default function LeaveManagement() {
                                     text-[#858b85]
                                 "
                             >
-                                {leave.from}
+                                {displayFrom}
                             </div>
 
 
@@ -269,7 +292,7 @@ export default function LeaveManagement() {
                                     text-[#858b85]
                                 "
                             >
-                                {leave.to}
+                                {displayTo}
                             </div>
 
 
@@ -281,7 +304,7 @@ export default function LeaveManagement() {
                                     text-[#171916]
                                 "
                             >
-                                {leave.days}
+                                {displayDays}
                             </div>
 
 
@@ -308,36 +331,46 @@ export default function LeaveManagement() {
                                         py-2
                                         text-[8px]
                                         tracking-[0.08em]
-                                        ${statusStyle[leave.status]}
+                                        ${statusBadgeClass}
                                     `}
                                 >
-                                    {leave.status}
+                                    {displayStatus}
                                 </span>
 
 
-                                {/* ACTION BUTTONS
-                                    ONLY FOR PENDING
-                                    AND ONLY VISIBLE ON HOVER
-                                */}
-                                {leave.status === "PENDING" && (
+                                {/* ACTION BUTTONS — ALWAYS VISIBLE */}
+                                <div
+                                    className="
+                                        flex
+                                        items-center
+                                        gap-1.5
+                                    "
+                                >
 
-                                    <div
+                                    {/* VIEW */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedLeave(leave)}
                                         className="
-                                            flex
-                                            items-center
-                                            gap-1.5
-                                            opacity-0
-                                            pointer-events-none
-                                            translate-x-1
-                                            transition-all
-                                            duration-200
-                                            group-hover:translate-x-0
-                                            group-hover:opacity-100
-                                            group-hover:pointer-events-auto
+                                            shrink-0
+                                            rounded-[9px]
+                                            border
+                                            border-[#d8d5cc]
+                                            bg-white
+                                            px-2.5
+                                            py-2
+                                            text-[8px]
+                                            text-[#4d5350]
+                                            transition-colors
+                                            duration-150
+                                            hover:bg-[#f1f1ec]
                                         "
                                     >
+                                        View
+                                    </button>
 
-                                        {/* APPROVE */}
+                                    {/* APPROVE */}
+                                    {leave.status === "PENDING" && (
                                         <button
                                             type="button"
                                             onClick={() =>
@@ -360,9 +393,10 @@ export default function LeaveManagement() {
                                         >
                                             Approve
                                         </button>
+                                    )}
 
-
-                                        {/* REJECT */}
+                                    {/* REJECT */}
+                                    {leave.status === "PENDING" && (
                                         <button
                                             type="button"
                                             onClick={() =>
@@ -385,20 +419,25 @@ export default function LeaveManagement() {
                                         >
                                             Reject
                                         </button>
+                                    )}
 
-                                    </div>
-
-                                )}
+                                </div>
 
                             </div>
 
                         </div>
-
-                    ))}
+                        );
+                    })}
 
                 </div>
 
             </section>
+
+            <ViewLeaveModal
+                isOpen={!!selectedLeave}
+                onClose={() => setSelectedLeave(null)}
+                leave={selectedLeave}
+            />
 
         </div>
     );

@@ -1,4 +1,3 @@
 package com.cubeage.erp.manufacturing.dto.request;
 
-public class UpdateWorkOrderStatusRequest {
-}
+public class UpdateWorkOrderStatusRequest{}

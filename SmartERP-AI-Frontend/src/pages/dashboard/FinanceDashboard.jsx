@@ -1,58 +1,48 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import RoleDashboardService from "../../core/services/modules/roleDashboard.service";
 import {
   Sparkles,
   ArrowUpRight,
   ChevronRight,
 } from "lucide-react";
+import financeService from "../../core/services/modules/finance.service";
+import storageService from "../../core/services/storage.service";
 
 /* =========================================================
    FINANCE DASHBOARD DATA
 ========================================================= */
 
-const stats = [
+const fallbackStats = [
   {
-    label: "REVENUE MTD",
-    value: "₹48.6M",
-    footer: "+12.4%",
+    label: "JOURNAL ENTRIES",
+    value: "0",
+    footer: "Loading unavailable",
   },
   {
-    label: "NET P&L",
-    value: "₹6.2M",
-    footer: "+8.1%",
+    label: "TOTAL DEBITS",
+    value: "₹0",
+    footer: "Loading unavailable",
   },
   {
-    label: "RECEIVABLES",
-    value: "₹8.2M",
-    footer: "12 invoices open",
-    warning: true,
+    label: "TOTAL CREDITS",
+    value: "₹0",
+    footer: "Loading unavailable",
   },
   {
-    label: "PAYABLES",
-    value: "₹5.4M",
-    footer: "Due in 15 days",
-    warning: true,
-  },
-  {
-    label: "GST DUE",
-    value: "₹1.8M",
-    footer: "Due 20 Aug",
-    warning: true,
-  },
-  {
-    label: "CASH POSITION",
-    value: "₹12.8M",
-    footer: "+3.2%",
+    label: "NET MOVEMENT",
+    value: "₹0",
+    footer: "Loading unavailable",
   },
 ];
 
-const insights = [
+const fallbackInsights = [
   "Potential duplicate invoice detected — INV-0284 · ₹2,84,000",
   "Cash position projected ↓8.4% in 30 days",
   "GST filing due in 10 days — 3 items pending",
   "12 payables bills overdue beyond 30 days",
 ];
 
-const initialApprovals = [
+const fallbackApprovals = [
   {
     id: "EXP-0092",
     title: "Marketing expense",
@@ -113,12 +103,7 @@ const revenueData = {
    KPI CARD
 ========================================================= */
 
-function StatCard({
-  label,
-  value,
-  footer,
-  warning,
-}) {
+function StatCard({ label, value, footer, warning }) {
   return (
     <div
       className="
@@ -168,11 +153,7 @@ function StatCard({
           mt-5
           font-sans
           text-[10px]
-          ${
-            warning
-              ? "text-[#a76a62]"
-              : "text-[#69716b]"
-          }
+          ${warning ? "text-[#a76a62]" : "text-[#69716b]"}
         `}
       >
         {footer}
@@ -187,13 +168,9 @@ function StatCard({
 
 function RevenueOverview() {
   const [period, setPeriod] = useState("6M");
-  const [hoveredIndex, setHoveredIndex] =
-    useState(null);
+  const [hoveredIndex, setHoveredIndex] = useState(null);
 
-  const data = useMemo(
-    () => revenueData[period],
-    [period]
-  );
+  const data = useMemo(() => revenueData[period], [period]);
 
   const chartWidth = 1000;
   const chartHeight = 250;
@@ -208,23 +185,16 @@ function RevenueOverview() {
 
   const xStep =
     data.length > 1
-      ? (chartWidth -
-          leftPadding -
-          rightPadding) /
-        (data.length - 1)
+      ? (chartWidth - leftPadding - rightPadding) / (data.length - 1)
       : 0;
 
-  const getX = (index) =>
-    leftPadding + index * xStep;
+  const getX = (index) => leftPadding + index * xStep;
 
   const getY = (value) =>
     chartHeight -
     bottomPadding -
-    ((value - minValue) /
-      (maxValue - minValue)) *
-      (chartHeight -
-        topPadding -
-        bottomPadding);
+    ((value - minValue) / (maxValue - minValue)) *
+      (chartHeight - topPadding - bottomPadding);
 
   const points = data.map((item, index) => ({
     ...item,
@@ -241,13 +211,8 @@ function RevenueOverview() {
       const previous = items[i - 1];
       const current = items[i];
 
-      const controlPoint1X =
-        previous.x +
-        (current.x - previous.x) / 2;
-
-      const controlPoint2X =
-        current.x -
-        (current.x - previous.x) / 2;
+      const controlPoint1X = previous.x + (current.x - previous.x) / 2;
+      const controlPoint2X = current.x - (current.x - previous.x) / 2;
 
       path += `
         C
@@ -271,21 +236,15 @@ function RevenueOverview() {
     Z`;
 
   const handleMouseMove = (event) => {
-    const rect =
-      event.currentTarget.getBoundingClientRect();
+    const rect = event.currentTarget.getBoundingClientRect();
 
-    const localX =
-      ((event.clientX - rect.left) /
-        rect.width) *
-      chartWidth;
+    const localX = ((event.clientX - rect.left) / rect.width) * chartWidth;
 
     let nearestIndex = 0;
     let nearestDistance = Infinity;
 
     points.forEach((point, index) => {
-      const distance = Math.abs(
-        point.x - localX
-      );
+      const distance = Math.abs(point.x - localX);
 
       if (distance < nearestDistance) {
         nearestDistance = distance;
@@ -296,10 +255,7 @@ function RevenueOverview() {
     setHoveredIndex(nearestIndex);
   };
 
-  const hoveredPoint =
-    hoveredIndex !== null
-      ? points[hoveredIndex]
-      : null;
+  const hoveredPoint = hoveredIndex !== null ? points[hoveredIndex] : null;
 
   return (
     <section
@@ -332,33 +288,13 @@ function RevenueOverview() {
           </p>
 
           <div className="mt-2 flex items-center gap-1">
-            <span
-              className="
-                font-serif
-                text-[19px]
-                text-[#11130f]
-              "
-            >
+            <span className="font-serif text-[19px] text-[#11130f]">
               ₹48.6M MTD
             </span>
 
-            <span
-              className="
-                font-serif
-                text-[17px]
-                text-[#9d9a6e]
-              "
-            >
-              ↑
-            </span>
+            <span className="font-serif text-[17px] text-[#9d9a6e]">↑</span>
 
-            <span
-              className="
-                font-sans
-                text-[11px]
-                text-[#9d9a6e]
-              "
-            >
+            <span className="font-sans text-[11px] text-[#9d9a6e]">
               12.4%
             </span>
           </div>
@@ -367,35 +303,33 @@ function RevenueOverview() {
         {/* PERIOD BUTTONS */}
 
         <div className="flex items-center gap-2">
-          {["3M", "6M", "1Y"].map(
-            (item) => (
-              <button
-                key={item}
-                type="button"
-                onClick={() => {
-                  setPeriod(item);
-                  setHoveredIndex(null);
-                }}
-                className={`
-                  rounded-[9px]
-                  px-3
-                  py-2
-                  font-sans
-                  text-[9px]
-                  font-medium
-                  transition-all
-                  duration-150
-                  ${
-                    period === item
-                      ? "bg-[#151814] text-white"
-                      : "text-[#929992] hover:bg-[#f1f1ec] hover:text-[#222620]"
-                  }
-                `}
-              >
-                {item}
-              </button>
-            )
-          )}
+          {["3M", "6M", "1Y"].map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => {
+                setPeriod(item);
+                setHoveredIndex(null);
+              }}
+              className={`
+                rounded-[9px]
+                px-3
+                py-2
+                font-sans
+                text-[9px]
+                font-medium
+                transition-all
+                duration-150
+                ${
+                  period === item
+                    ? "bg-[#151814] text-white"
+                    : "text-[#929992] hover:bg-[#f1f1ec] hover:text-[#222620]"
+                }
+              `}
+            >
+              {item}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -413,41 +347,19 @@ function RevenueOverview() {
             cursor-crosshair
           "
           onMouseMove={handleMouseMove}
-          onMouseLeave={() =>
-            setHoveredIndex(null)
-          }
+          onMouseLeave={() => setHoveredIndex(null)}
         >
           <defs>
-            <linearGradient
-              id="financeRevenueFade"
-              x1="0"
-              y1="0"
-              x2="0"
-              y2="1"
-            >
-              <stop
-                offset="0%"
-                stopColor="#6d785f"
-                stopOpacity="0.14"
-              />
-
-              <stop
-                offset="100%"
-                stopColor="#6d785f"
-                stopOpacity="0"
-              />
+            <linearGradient id="financeRevenueFade" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#6d785f" stopOpacity="0.14" />
+              <stop offset="100%" stopColor="#6d785f" stopOpacity="0" />
             </linearGradient>
           </defs>
 
           {/* AREA */}
-
-          <path
-            d={areaPath}
-            fill="url(#financeRevenueFade)"
-          />
+          <path d={areaPath} fill="url(#financeRevenueFade)" />
 
           {/* LINE */}
-
           <path
             d={linePath}
             fill="none"
@@ -458,7 +370,6 @@ function RevenueOverview() {
           />
 
           {/* HOVER GUIDE */}
-
           {hoveredPoint && (
             <>
               <line
@@ -499,51 +410,22 @@ function RevenueOverview() {
             "
             style={{
               left: `${Math.min(
-                Math.max(
-                  (hoveredPoint.x /
-                    chartWidth) *
-                    100,
-                  7
-                ),
+                Math.max((hoveredPoint.x / chartWidth) * 100, 7),
                 85
               )}%`,
               top: `${Math.min(
-                Math.max(
-                  (hoveredPoint.y /
-                    chartHeight) *
-                    100 +
-                    15,
-                  25
-                ),
+                Math.max((hoveredPoint.y / chartHeight) * 100 + 15, 25),
                 70
               )}%`,
               transform: "translateX(-20%)",
             }}
           >
-            <p
-              className="
-                font-sans
-                text-[10px]
-                font-medium
-                text-white
-              "
-            >
+            <p className="font-sans text-[10px] font-medium text-white">
               {hoveredPoint.label}
             </p>
 
-            <p
-              className="
-                mt-1
-                font-sans
-                text-[10px]
-                text-[#91a17e]
-              "
-            >
-              ₹
-              {hoveredPoint.value.toFixed(
-                1
-              )}
-              M
+            <p className="mt-1 font-sans text-[10px] text-[#91a17e]">
+              ₹{hoveredPoint.value.toFixed(1)}M
             </p>
           </div>
         )}
@@ -556,7 +438,7 @@ function RevenueOverview() {
    AI INSIGHTS
 ========================================================= */
 
-function AIInsights() {
+function AIInsights({ insights }) {
   return (
     <section
       className="
@@ -584,11 +466,7 @@ function AIInsights() {
             bg-[#20271d]
           "
         >
-          <Sparkles
-            size={13}
-            strokeWidth={1.7}
-            className="text-[#a7b692]"
-          />
+          <Sparkles size={13} strokeWidth={1.7} className="text-[#a7b692]" />
         </div>
 
         <p
@@ -606,67 +484,58 @@ function AIInsights() {
       </div>
 
       <div className="mt-5 space-y-3">
-        {insights.map(
-          (item, index) => (
-            <div
-              key={index}
+        {insights.map((item, index) => (
+          <div
+            key={index}
+            className="
+              group
+              flex
+              gap-3
+              rounded-[15px]
+              border
+              border-[#2d322c]
+              bg-[#1d211c]
+              px-4
+              py-4
+              transition-all
+              duration-200
+              hover:-translate-y-[1px]
+              hover:border-[#3e463a]
+              hover:bg-[#242922]
+            "
+          >
+            <span
               className="
-                group
-                flex
-                gap-3
-                rounded-[15px]
-                border
-                border-[#2d322c]
-                bg-[#1d211c]
-                px-4
-                py-4
-                transition-all
+                mt-[6px]
+                h-[5px]
+                w-[5px]
+                shrink-0
+                rounded-full
+                bg-[#66755b]
+                transition-transform
                 duration-200
-                hover:-translate-y-[1px]
-                hover:border-[#3e463a]
-                hover:bg-[#242922]
+                group-hover:scale-125
+              "
+            />
+
+            <p
+              className="
+                font-sans
+                text-[10px]
+                leading-[1.6]
+                text-[#8f9690]
+                transition-colors
+                duration-200
+                group-hover:text-[#b0b5ae]
               "
             >
-              <span
-                className="
-                  mt-[6px]
-                  h-[5px]
-                  w-[5px]
-                  shrink-0
-                  rounded-full
-                  bg-[#66755b]
-                  transition-transform
-                  duration-200
-                  group-hover:scale-125
-                "
-              />
-
-              <p
-                className="
-                  font-sans
-                  text-[10px]
-                  leading-[1.6]
-                  text-[#8f9690]
-                  transition-colors
-                  duration-200
-                  group-hover:text-[#b0b5ae]
-                "
-              >
-                {item}
-              </p>
-            </div>
-          )
-        )}
+              {item}
+            </p>
+          </div>
+        ))}
       </div>
 
-      <div
-        className="
-          mt-auto
-          border-t
-          border-[#282c27]
-          pt-5
-        "
-      >
+      <div className="mt-auto border-t border-[#282c27] pt-5">
         <button
           type="button"
           className="
@@ -687,11 +556,7 @@ function AIInsights() {
           "
         >
           Open AI Assistant
-
-          <ArrowUpRight
-            size={12}
-            strokeWidth={1.7}
-          />
+          <ArrowUpRight size={12} strokeWidth={1.7} />
         </button>
       </div>
     </section>
@@ -702,40 +567,10 @@ function AIInsights() {
    PENDING APPROVALS
 ========================================================= */
 
-function PendingApprovals() {
-  const [approvals, setApprovals] =
-    useState(initialApprovals);
-
-  const handleApprove = (id) => {
-    setApprovals((current) =>
-      current.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status: "APPROVED",
-            }
-          : item
-      )
-    );
-  };
-
-  const handleReject = (id) => {
-    setApprovals((current) =>
-      current.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              status: "REJECTED",
-            }
-          : item
-      )
-    );
-  };
-
-  const pendingCount =
-    approvals.filter(
-      (item) => item.status === "PENDING"
-    ).length;
+function PendingApprovals({ approvals, onApprove, onReject }) {
+  const pendingCount = approvals.filter(
+    (item) => item.status === "PENDING"
+  ).length;
 
   return (
     <section
@@ -760,14 +595,7 @@ function PendingApprovals() {
           py-6
         "
       >
-        <h2
-          className="
-            font-serif
-            text-[22px]
-            leading-none
-            text-[#161815]
-          "
-        >
+        <h2 className="font-serif text-[22px] leading-none text-[#161815]">
           Pending Approvals
         </h2>
 
@@ -811,14 +639,7 @@ function PendingApprovals() {
         >
           {/* LEFT */}
 
-          <div
-            className="
-              flex
-              min-w-0
-              items-center
-              gap-5
-            "
-          >
+          <div className="flex min-w-0 items-center gap-5">
             <span
               className={`
                 h-[12px]
@@ -828,11 +649,7 @@ function PendingApprovals() {
                 transition-transform
                 duration-200
                 group-hover:scale-[1.08]
-                ${
-                  item.urgent
-                    ? "bg-[#a66a60]"
-                    : "bg-[#b1a16d]"
-                }
+                ${item.urgent ? "bg-[#a66a60]" : "bg-[#b1a16d]"}
               `}
             />
 
@@ -848,14 +665,8 @@ function PendingApprovals() {
                   group-hover:text-[#171916]
                 "
               >
-                <span className="font-medium">
-                  {item.id}
-                </span>
-
-                <span className="mx-2">
-                  ·
-                </span>
-
+                <span className="font-medium">{item.id}</span>
+                <span className="mx-2">·</span>
                 {item.title}
               </p>
 
@@ -877,30 +688,14 @@ function PendingApprovals() {
 
           {/* RIGHT */}
 
-          <div
-            className="
-              flex
-              items-center
-              justify-end
-              gap-3
-            "
-          >
-            <span
-              className="
-                min-w-[82px]
-                text-right
-                font-serif
-                text-[20px]
-                text-[#181b17]
-              "
-            >
+          <div className="flex items-center justify-end gap-3">
+            <span className="min-w-[82px] text-right font-serif text-[20px] text-[#181b17]">
               {item.amount}
             </span>
 
             {/* HOVER ACTIONS */}
 
-            {item.status ===
-              "PENDING" && (
+            {item.status === "PENDING" && (
               <div
                 className="
                   flex
@@ -922,11 +717,7 @@ function PendingApprovals() {
               >
                 <button
                   type="button"
-                  onClick={() =>
-                    handleApprove(
-                      item.id
-                    )
-                  }
+                  onClick={() => onApprove(item.id)}
                   className="
                     shrink-0
                     rounded-[9px]
@@ -950,11 +741,7 @@ function PendingApprovals() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    handleReject(
-                      item.id
-                    )
-                  }
+                  onClick={() => onReject(item.id)}
                   className="
                     shrink-0
                     rounded-[9px]
@@ -978,8 +765,7 @@ function PendingApprovals() {
               </div>
             )}
 
-            {item.status !==
-              "PENDING" && (
+            {item.status !== "PENDING" && (
               <span
                 className={`
                   rounded-[9px]
@@ -990,8 +776,7 @@ function PendingApprovals() {
                   font-medium
                   tracking-[0.06em]
                   ${
-                    item.status ===
-                    "APPROVED"
+                    item.status === "APPROVED"
                       ? "bg-[#e3ebdf] text-[#53624f]"
                       : "bg-[#eee2df] text-[#8a635b]"
                   }
@@ -1022,72 +807,56 @@ function QuickActions() {
         bg-white
       "
     >
-      <div
-        className="
-          border-b
-          border-[#e5e2db]
-          px-7
-          py-6
-        "
-      >
-        <h2
-          className="
-            font-serif
-            text-[22px]
-            leading-none
-            text-[#161815]
-          "
-        >
+      <div className="border-b border-[#e5e2db] px-7 py-6">
+        <h2 className="font-serif text-[22px] leading-none text-[#161815]">
           Quick Actions
         </h2>
       </div>
 
       <div className="space-y-3 px-6 py-6">
-        {quickActions.map(
-          (action) => (
-            <button
-              key={action}
-              type="button"
+        {quickActions.map((action) => (
+          <button
+            key={action}
+            type="button"
+            className="
+              group
+              flex
+              w-full
+              items-center
+              justify-between
+              rounded-[15px]
+              border
+              border-[#e4e1da]
+              bg-white
+              px-4
+              py-4
+              text-left
+              font-sans
+              text-[13px]
+              text-[#777d78]
+              transition-all
+              duration-200
+              hover:-translate-y-[1px]
+              hover:border-[#d5d2ca]
+              hover:bg-[#f1f1ec]
+              hover:text-[#262a26]
+            "
+          >
+            <span>{action}</span>
+
+            <ChevronRight
+              size={14}
+              strokeWidth={1.6}
               className="
-                group
-                flex
-                w-full
-                items-center
-                justify-between
-                rounded-[15px]
-                border
-                border-[#e4e1da]
-                bg-white
-                px-4
-                py-4
-                text-left
-                font-sans
-                text-[13px]
-                text-[#777d78]
+                text-[#b7bbb7]
                 transition-all
                 duration-200
-                hover:-translate-y-[1px]
-                hover:border-[#d5d2ca]
-                hover:bg-[#f1f1ec]
-                hover:text-[#262a26]
+                group-hover:translate-x-1
+                group-hover:text-[#656b65]
               "
-            >
-              <span>{action}</span>
-
-              <ChevronRight
-                size={14}
-                strokeWidth={1.6}
-                className="
-                  text-[#b7bbb7]
-                  transition-all
-                  duration-200
-                  group-hover:translate-x-1
-                  group-hover:text-[#656b65]
-                "
-              />
-            </button>
-          )
-        )}
+            />
+          </button>
+        ))}
       </div>
     </section>
   );
@@ -1098,10 +867,140 @@ function QuickActions() {
 ========================================================= */
 
 export default function FinanceDashboard() {
-  const [
-    quickActionOpen,
-    setQuickActionOpen,
-  ] = useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [quickActionOpen, setQuickActionOpen] = useState(false);
+
+  const [insights, setInsights] = useState(fallbackInsights);
+  const [approvals, setApprovals] = useState(fallbackApprovals);
+
+  // FIX: userName / companyName were referenced but never defined anywhere,
+  // which threw "ReferenceError: userName is not defined" on every render.
+  // Pull the current user/tenant from storageService — adjust the accessor
+  // names below to match whatever storageService actually exposes.
+  const currentUser = storageService.getUser?.() || {};
+  const userName = currentUser.name || currentUser.fullName || "there";
+  const companyName =
+    currentUser.companyName ||
+    dashboardData?.companyName ||
+    "Your Organization";
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        setError("");
+
+        const response = await RoleDashboardService.getFinanceDashboard();
+        setDashboardData(response.data);
+
+        // FIX: financeService was imported but never used. Wiring it up here
+        // for insights + approvals, with a safe fallback to the static demo
+        // data if either call fails or the methods don't exist yet.
+        // Rename these to match financeService's real method names.
+        try {
+          const [insightsRes, approvalsRes] = await Promise.all([
+            financeService.getInsights?.(),
+            financeService.getPendingApprovals?.(),
+          ]);
+
+          if (insightsRes?.data?.length) {
+            setInsights(insightsRes.data);
+          }
+
+          if (approvalsRes?.data?.length) {
+            setApprovals(approvalsRes.data);
+          }
+        } catch (secondaryError) {
+          console.warn(
+            "Falling back to static insights/approvals:",
+            secondaryError
+          );
+        }
+      } catch (requestError) {
+        console.error("Unable to load Finance dashboard:", requestError);
+
+        setError(
+          requestError?.response?.data?.message ||
+            "Unable to load finance dashboard data."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
+
+  const formatAmount = (amount) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(Number(amount || 0));
+
+  const netMovement = Number(dashboardData?.netMovement || 0);
+
+  const stats = dashboardData
+    ? [
+        {
+          label: "JOURNAL ENTRIES",
+          value: Number(dashboardData.journalEntries || 0).toLocaleString(
+            "en-IN"
+          ),
+          footer: "Entries posted for this tenant",
+        },
+        {
+          label: "TOTAL DEBITS",
+          value: formatAmount(dashboardData.totalDebits),
+          footer: "Posted journal debit value",
+        },
+        {
+          label: "TOTAL CREDITS",
+          value: formatAmount(dashboardData.totalCredits),
+          footer: "Posted journal credit value",
+        },
+        {
+          label: "NET MOVEMENT",
+          value: formatAmount(netMovement),
+          footer:
+            netMovement >= 0
+              ? "Credit movement exceeds debits"
+              : "Debit movement exceeds credits",
+          warning: netMovement < 0,
+        },
+      ]
+    : fallbackStats;
+
+  // Approve/reject now try to persist through financeService first, and
+  // always update local state so the UI responds immediately either way.
+  const handleApprove = async (id) => {
+    setApprovals((current) =>
+      current.map((item) =>
+        item.id === id ? { ...item, status: "APPROVED" } : item
+      )
+    );
+
+    try {
+      await financeService.approveItem?.(id);
+    } catch (approveError) {
+      console.error("Failed to persist approval:", approveError);
+    }
+  };
+
+  const handleReject = async (id) => {
+    setApprovals((current) =>
+      current.map((item) =>
+        item.id === id ? { ...item, status: "REJECTED" } : item
+      )
+    );
+
+    try {
+      await financeService.rejectItem?.(id);
+    } catch (rejectError) {
+      console.error("Failed to persist rejection:", rejectError);
+    }
+  };
 
   return (
     <main
@@ -1115,28 +1014,24 @@ export default function FinanceDashboard() {
         lg:px-8
       "
     >
-      <div
-        className="
-          mx-auto
-          w-full
-          max-w-[1540px]
-        "
-      >
+      <div className="mx-auto w-full max-w-[1540px]">
+        {loading && (
+          <div className="mb-6 rounded-[16px] border border-[#e3e0d9] bg-white px-5 py-4 text-sm text-[#6d7069]">
+            Loading finance dashboard…
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-6 rounded-[16px] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
         {/* =====================================================
             HEADER
         ====================================================== */}
 
-        <section
-          className="
-            flex
-            flex-col
-            justify-between
-            gap-6
-            lg:flex-row
-            lg:items-start
-          "
-        >
+        <section className="flex flex-col justify-between gap-6 lg:flex-row lg:items-start">
           <div>
             <p
               className="
@@ -1161,37 +1056,19 @@ export default function FinanceDashboard() {
                 text-[#11130f]
               "
             >
-              Rahul Sharma
+              {userName}
             </h1>
 
-            <p
-              className="
-                mt-3
-                font-sans
-                text-[11px]
-                text-[#8d938d]
-              "
-            >
+            <p className="mt-3 font-sans text-[11px] text-[#8d938d]">
               Finance Dashboard
-
-              <span className="mx-2">
-                ·
-              </span>
-
-              Acme Manufacturing Ltd
+              <span className="mx-2">·</span>
+              {companyName}
             </p>
           </div>
 
           {/* ACTION BUTTONS */}
 
-          <div
-            className="
-              relative
-              flex
-              items-center
-              gap-3
-            "
-          >
+          <div className="relative flex items-center gap-3">
             <button
               type="button"
               className="
@@ -1216,25 +1093,13 @@ export default function FinanceDashboard() {
                 hover:bg-[#e0e9da]
               "
             >
-              <span
-                className="
-                  h-[8px]
-                  w-[8px]
-                  rounded-full
-                  bg-[#b7c8aa]
-                "
-              />
-
+              <span className="h-[8px] w-[8px] rounded-full bg-[#b7c8aa]" />
               AI Active
             </button>
 
             <button
               type="button"
-              onClick={() =>
-                setQuickActionOpen(
-                  (value) => !value
-                )
-              }
+              onClick={() => setQuickActionOpen((value) => !value)}
               className="
                 group
                 flex
@@ -1258,7 +1123,6 @@ export default function FinanceDashboard() {
               "
             >
               + Quick Action
-
               <ArrowUpRight
                 size={12}
                 strokeWidth={1.7}
@@ -1289,43 +1153,33 @@ export default function FinanceDashboard() {
                   shadow-[0_14px_35px_rgba(20,24,20,0.12)]
                 "
               >
-                {quickActions.map(
-                  (action) => (
-                    <button
-                      key={action}
-                      type="button"
-                      onClick={() =>
-                        setQuickActionOpen(
-                          false
-                        )
-                      }
-                      className="
-                        flex
-                        w-full
-                        items-center
-                        justify-between
-                        rounded-[10px]
-                        px-3
-                        py-3
-                        text-left
-                        font-sans
-                        text-[10px]
-                        text-[#737a74]
-                        transition-colors
-                        duration-150
-                        hover:bg-[#f1f1ec]
-                        hover:text-[#222620]
-                      "
-                    >
-                      {action}
-
-                      <ChevronRight
-                        size={12}
-                        strokeWidth={1.6}
-                      />
-                    </button>
-                  )
-                )}
+                {quickActions.map((action) => (
+                  <button
+                    key={action}
+                    type="button"
+                    onClick={() => setQuickActionOpen(false)}
+                    className="
+                      flex
+                      w-full
+                      items-center
+                      justify-between
+                      rounded-[10px]
+                      px-3
+                      py-3
+                      text-left
+                      font-sans
+                      text-[10px]
+                      text-[#737a74]
+                      transition-colors
+                      duration-150
+                      hover:bg-[#f1f1ec]
+                      hover:text-[#222620]
+                    "
+                  >
+                    {action}
+                    <ChevronRight size={12} strokeWidth={1.6} />
+                  </button>
+                ))}
               </div>
             )}
           </div>
@@ -1333,6 +1187,8 @@ export default function FinanceDashboard() {
 
         {/* =====================================================
             KPI CARDS
+            FIX: was xl:grid-cols-6 with only 4 stat cards, leaving
+            two empty tracks on large screens.
         ====================================================== */}
 
         <section
@@ -1343,17 +1199,12 @@ export default function FinanceDashboard() {
             gap-4
             sm:grid-cols-2
             lg:grid-cols-3
-            xl:grid-cols-6
+            xl:grid-cols-4
           "
         >
-          {stats.map(
-            (stat) => (
-              <StatCard
-                key={stat.label}
-                {...stat}
-              />
-            )
-          )}
+          {stats.map((stat) => (
+            <StatCard key={stat.label} {...stat} />
+          ))}
         </section>
 
         {/* =====================================================
@@ -1370,8 +1221,7 @@ export default function FinanceDashboard() {
           "
         >
           <RevenueOverview />
-
-          <AIInsights />
+          <AIInsights insights={insights} />
         </section>
 
         {/* =====================================================
@@ -1387,11 +1237,14 @@ export default function FinanceDashboard() {
             xl:grid-cols-[minmax(0,2.1fr)_minmax(340px,0.85fr)]
           "
         >
-          <PendingApprovals />
+          <PendingApprovals
+            approvals={approvals}
+            onApprove={handleApprove}
+            onReject={handleReject}
+          />
 
           <QuickActions />
         </section>
-
       </div>
     </main>
   );

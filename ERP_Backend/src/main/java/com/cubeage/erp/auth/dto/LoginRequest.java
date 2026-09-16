@@ -8,8 +8,8 @@ import lombok.Data;
 @Data
 public class LoginRequest {
 
-    @NotNull
-    private Long tenantId;
+//    @NotNull
+//    private Long tenantId;
 
     @NotBlank
     @Email

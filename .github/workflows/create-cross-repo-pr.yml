@@ -1,10 +1,11 @@
 name: Create PR to Company Development
 
 on:
-  repository_dispatch:
-    types:
-      - development_updated
+  push:
+    branches:
+      - development
 
+  
   workflow_dispatch:
 
 permissions:

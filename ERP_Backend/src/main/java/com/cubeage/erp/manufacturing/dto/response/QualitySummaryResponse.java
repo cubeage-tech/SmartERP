@@ -1,4 +1,10 @@
 package com.cubeage.erp.manufacturing.dto.response;
 
-public class QualitySummaryResponse {
-}
+import java.util.List;
+
+public record QualitySummaryResponse(
+        Double passRate,
+        Double reworkRate,
+        Double rejectionRate,
+        List<RejectionResponse> recentRejections
+) {}

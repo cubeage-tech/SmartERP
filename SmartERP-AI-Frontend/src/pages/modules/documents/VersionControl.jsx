@@ -1,609 +1,298 @@
-import {
-  useEffect,
-  useState,
-} from "react";
-
-import {
-  documentsApi,
-  downloadBlob,
-} from "./documentsApi";
-
+import { useState, useEffect, useCallback, useRef } from "react";
+import DocumentsService from "../../../core/services/modules/documents.service";
 import "./documents.css";
 
+const fmtDate = (iso) => {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch (e) {
+    return String(iso);
+  }
+};
+
+const formatSize = (bytes = 0) => {
+  const num = Number(bytes) || 0;
+  if (num >= 1024 * 1024) return `${(num / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.max(1, Math.round(num / 1024))} KB`;
+};
 
 export default function VersionControl() {
+  const [documents, setDocuments] = useState([]);
+  const [selectedDocId, setSelectedDocId] = useState("");
+  const [versions, setVersions] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(true);
+  const [loadingVersions, setLoadingVersions] = useState(false);
+  const [error, setError] = useState(null);
 
-  const [
-    documents,
-    setDocuments
-  ] = useState([]);
+  // New version upload state
+  const [showUpload, setShowUpload] = useState(false);
+  const [newVersionFile, setNewVersionFile] = useState(null);
+  const [changeReason, setChangeReason] = useState("");
+  const [comments, setComments] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [actioningId, setActioningId] = useState(null);
 
+  const fileInputRef = useRef();
 
-  const [
-    documentId,
-    setDocumentId
-  ] = useState("");
-
-
-  const [
-    versions,
-    setVersions
-  ] = useState([]);
-
-
-  const [
-    file,
-    setFile
-  ] = useState(null);
-
-
-  const [
-    reason,
-    setReason
-  ] = useState("");
-
-
-  const [
-    comments,
-    setComments
-  ] = useState("");
-
+  // Load all documents for selector
+  const fetchDocs = useCallback(async () => {
+    try {
+      setLoadingDocs(true);
+      const res = await DocumentsService.getAll();
+      const list = Array.isArray(res.data) ? res.data : [];
+      setDocuments(list);
+      if (list.length > 0 && !selectedDocId) {
+        setSelectedDocId(String(list[0].id));
+      }
+    } catch (err) {
+      console.error("Failed to fetch documents for version control:", err);
+      setError("Failed to load documents list.");
+    } finally {
+      setLoadingDocs(false);
+    }
+  }, [selectedDocId]);
 
   useEffect(() => {
+    fetchDocs();
+  }, [fetchDocs]);
 
-    documentsApi
-      .documents()
-      .then(
-        response => {
-
-          setDocuments(
-            response.data
-          );
-
-
-          if (
-            response
-              .data
-              .length
-          ) {
-
-            setDocumentId(
-
-              String(
-                response
-                  .data[0]
-                  .id
-              )
-
-            );
-          }
-        }
-      );
-
+  // Load versions for selected document
+  const fetchVersions = useCallback(async (docId) => {
+    if (!docId) return;
+    try {
+      setLoadingVersions(true);
+      setError(null);
+      const res = await DocumentsService.getVersions(docId);
+      setVersions(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Failed to load versions:", err);
+      setError("Failed to load version history for this document.");
+    } finally {
+      setLoadingVersions(false);
+    }
   }, []);
 
-
   useEffect(() => {
-
-    if (
-      documentId
-    ) {
-
-      loadVersions();
-
+    if (selectedDocId) {
+      fetchVersions(selectedDocId);
     }
+  }, [selectedDocId, fetchVersions]);
 
-  }, [
-    documentId
-  ]);
+  const handleUploadNewVersion = async (e) => {
+    e.preventDefault();
+    if (!newVersionFile) {
+      alert("Please select a file to upload.");
+      return;
+    }
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", newVersionFile);
+      if (changeReason) formData.append("changeReason", changeReason);
+      if (comments) formData.append("comments", comments);
 
-
-  const loadVersions =
-    async () => {
-
-      const {
-        data
-      } =
-        await documentsApi
-          .versions(
-            documentId
-          );
-
-      setVersions(
-        data
-      );
-    };
-
-
-  const uploadVersion =
-    async event => {
-
-      event.preventDefault();
-
-
-      if (
-        !file ||
-        !documentId
-      ) {
-        return;
-      }
-
-
-      await documentsApi
-        .uploadVersion(
-
-          documentId,
-
-          file,
-
-          reason,
-
-          comments
-
-        );
-
-
-      setFile(null);
-
-      setReason("");
-
+      await DocumentsService.uploadVersion(selectedDocId, formData);
+      setNewVersionFile(null);
+      setChangeReason("");
       setComments("");
+      setShowUpload(false);
+      await fetchVersions(selectedDocId);
+      await fetchDocs();
+    } catch (err) {
+      console.error("Failed to upload new version:", err);
+      alert("Failed to upload new version.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
+  const handleRestore = async (version) => {
+    if (!window.confirm(`Restore Version ${version.versionNumber}? This will set it as the active document version.`)) {
+      return;
+    }
+    try {
+      setActioningId(version.id);
+      await DocumentsService.restoreVersion(selectedDocId, version.id);
+      await fetchVersions(selectedDocId);
+      await fetchDocs();
+    } catch (err) {
+      console.error("Failed to restore version:", err);
+      alert("Failed to restore version.");
+    } finally {
+      setActioningId(null);
+    }
+  };
 
-      await loadVersions();
-    };
-
-
-  const restoreVersion =
-    async versionId => {
-
-      const confirm =
-        window.confirm(
-          "Restore this version?"
-        );
-
-
-      if (!confirm) {
-        return;
-      }
-
-
-      await documentsApi
-        .restoreVersion(
-
-          documentId,
-
-          versionId
-
-        );
-
-
-      await loadVersions();
-    };
-
-
-  const downloadVersion =
-    async version => {
-
-      const response =
-        await documentsApi
-          .downloadVersion(
-
-            documentId,
-
-            version.id
-
-          );
-
-
-      downloadBlob(
-
-        response.data,
-
-        version
-          .originalFileName
-
+  const handleDownloadVersion = async (version) => {
+    try {
+      await DocumentsService.downloadVersion(
+        selectedDocId,
+        version.id,
+        version.originalFileName || `v${version.versionNumber}-document`
       );
-    };
+    } catch (err) {
+      console.error("Failed to download version:", err);
+      alert("Failed to download version file.");
+    }
+  };
 
+  const selectedDoc = documents.find((d) => String(d.id) === String(selectedDocId));
 
   return (
-
     <div className="documents-page">
-
       <div className="doc-title-row">
-
         <div>
-
-          <div className="doc-eyebrow">
-
-            DOCUMENTS
-
-          </div>
-
-          <h1>
-
-            Version Control
-
-          </h1>
-
-          <p>
-
-            Manage document
-            revision history.
-
-          </p>
-
+          <div className="doc-eyebrow">DOCUMENTS</div>
+          <h1>Version Control & History</h1>
+          <p>Inspect audit trail, revert revisions, and maintain full immutable file history.</p>
         </div>
-
+        <div className="doc-header-actions">
+          {selectedDocId && (
+            <button className="doc-btn doc-btn-dark" onClick={() => setShowUpload(!showUpload)}>
+              {showUpload ? "Cancel Upload" : "+ Upload New Version"}
+            </button>
+          )}
+        </div>
       </div>
 
-
-      <div className="version-selector">
-
-        <label>
-
-          Select Document
-
-          <select
-
-            value={
-              documentId
-            }
-
-            onChange={
-              event =>
-                setDocumentId(
-                  event
-                    .target
-                    .value
-                )
-            }
-          >
-
-            {
-              documents.map(
-                document => (
-
-                  <option
-                    value={
-                      document.id
-                    }
-                    key={
-                      document.id
-                    }
-                  >
-
-                    {
-                      document
-                        .documentNumber
-                    }
-                    {" — "}
-                    {
-                      document.title
-                    }
-
-                  </option>
-
-                )
-              )
-            }
-
-          </select>
-
+      {/* Document Selector Header */}
+      <div style={{ background: "#fff", border: "1px solid #d5d2ca", borderRadius: 4, padding: "16px 20px", marginTop: 16 }}>
+        <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#53605e", marginBottom: 6 }}>
+          SELECT DOCUMENT TO INSPECT VERSIONS
         </label>
-
+        {loadingDocs ? (
+          <div>Loading documents...</div>
+        ) : (
+          <select
+            className="doc-select"
+            value={selectedDocId}
+            onChange={(e) => setSelectedDocId(e.target.value)}
+            style={{ maxWidth: 500 }}
+          >
+            {documents.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.title} (v{d.currentVersion || 1} · {d.type})
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
+      {/* New Version Upload Box */}
+      {showUpload && (
+        <div style={{ background: "#faf9f6", border: "1px solid #11130f", borderRadius: 4, padding: 20, marginTop: 16 }}>
+          <h3 style={{ margin: "0 0 12px", fontSize: 14 }}>Upload New Version for: {selectedDoc?.title}</h3>
+          <form onSubmit={handleUploadNewVersion}>
+            <div style={{ marginBottom: 12 }}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={(e) => setNewVersionFile(e.target.files[0])}
+                required
+              />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+              <div>
+                <label style={{ display: "block", fontSize: 11, color: "#53605e", marginBottom: 4 }}>CHANGE REASON</label>
+                <input
+                  className="doc-input"
+                  placeholder="e.g. Revised vendor prices"
+                  value={changeReason}
+                  onChange={(e) => setChangeReason(e.target.value)}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: 11, color: "#53605e", marginBottom: 4 }}>COMMENTS</label>
+                <input
+                  className="doc-input"
+                  placeholder="Additional revision notes"
+                  value={comments}
+                  onChange={(e) => setComments(e.target.value)}
+                />
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button type="submit" className="doc-btn doc-btn-dark" disabled={uploading}>
+                {uploading ? "Uploading Version..." : "Save Revision"}
+              </button>
+              <button type="button" className="doc-btn doc-btn-light" onClick={() => setShowUpload(false)}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
-      <div className="version-grid">
+      {/* Version List */}
+      <div style={{ marginTop: 24 }}>
+        {loadingVersions && <div className="doc-empty">Loading version history...</div>}
+        {error && <div className="doc-empty" style={{ color: "#d9534f" }}>{error}</div>}
 
-        {/* HISTORY */}
-
-        <div className="overview-panel">
-
-          <h2>
-
-            Version History
-
-          </h2>
-
-
-          <div className="version-list">
-
-            {
-              versions.map(
-                version => (
-
-                  <div
-                    className=
-                      "version-row"
-                    key={
-                      version.id
-                    }
-                  >
-
-                    <div className="version-dot">
-
-                      <span />
-
-                    </div>
-
-
-                    <div className="version-content">
-
-                      <div className="version-header">
-
-                        <strong>
-
-                          Version{" "}
-                          {
-                            version
-                              .versionNumber
-                          }
-
-                          {
-                            version.current
-                              ? " · Current"
-                              : ""
-                          }
-
-                        </strong>
-
-
-                        <small>
-
-                          {
-                            version
-                              .createdAt
-
-                              ? new Date(
-                                  version
-                                    .createdAt
-                                )
-                                  .toLocaleString()
-
-                              : ""
-                          }
-
-                        </small>
-
-                      </div>
-
-
-                      <p>
-
-                        {
-                          version
-                            .originalFileName
-                        }
-
-                      </p>
-
-
-                      <div className="doc-meta">
-
-                        <span>
-
-                          By{" "}
-
-                          {
-                            version
-                              .uploadedByName ||
-                            "User"
-                          }
-
-                        </span>
-
-
-                        {
-                          version
-                            .changeReason && (
-
-                            <>
-
-                              <span>
-                                ·
-                              </span>
-
-                              <span>
-
-                                {
-                                  version
-                                    .changeReason
-                                }
-
-                              </span>
-
-                            </>
-
-                          )
-                        }
-
-                      </div>
-
-
-                      <div className="version-actions">
-
-                        <button
-                          className=
-                            "doc-btn doc-btn-light"
-
-                          onClick={
-                            () =>
-                              downloadVersion(
-                                version
-                              )
-                          }
-                        >
-
-                          Download
-
-                        </button>
-
-
-                        {
-                          !version.current && (
-
-                            <button
-                              className=
-                                "doc-btn doc-btn-dark"
-
-                              onClick={
-                                () =>
-                                  restoreVersion(
-                                    version.id
-                                  )
-                              }
-                            >
-
-                              Restore
-
-                            </button>
-
-                          )
-                        }
-
-                      </div>
-
-                    </div>
-
+        {!loadingVersions && !error && (
+          <div className="doc-list">
+            {versions.map((ver) => (
+              <div className="doc-row" key={ver.id} style={{ borderColor: ver.current ? "#11130f" : "#e3e0d9" }}>
+                <div className="doc-row-left">
+                  <div className="doc-file-icon">
+                    <span style={{ fontSize: 11, fontWeight: 700 }}>v{ver.versionNumber}</span>
                   </div>
-
-                )
-              )
-            }
-
-
-            {
-              !versions.length && (
-
-                <div className="doc-empty">
-
-                  No versions found.
-
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <h3>{ver.originalFileName || "document-file"}</h3>
+                      {ver.current && (
+                        <span className="doc-status doc-status--approved" style={{ fontSize: 10, padding: "2px 6px" }}>
+                          CURRENT ACTIVE
+                        </span>
+                      )}
+                    </div>
+                    <div className="doc-meta">
+                      <span>{formatSize(ver.fileSize)}</span>
+                      <span>·</span>
+                      <span>Uploaded by {ver.uploadedByName || "User"}</span>
+                      <span>·</span>
+                      <span>{fmtDate(ver.createdAt)}</span>
+                      {ver.changeReason && (
+                        <>
+                          <span>·</span>
+                          <em>Reason: {ver.changeReason}</em>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
-              )
-            }
-
+                <div className="approval-actions">
+                  <button
+                    className="doc-btn doc-btn-light"
+                    onClick={() => handleDownloadVersion(ver)}
+                  >
+                    ↓ Download
+                  </button>
+                  {!ver.current && (
+                    <button
+                      className="doc-btn doc-btn-dark"
+                      onClick={() => handleRestore(ver)}
+                      disabled={actioningId === ver.id}
+                    >
+                      {actioningId === ver.id ? "Restoring..." : "Restore Version"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+            {!versions.length && (
+              <div className="doc-empty">No versions recorded for this document.</div>
+            )}
           </div>
-
-        </div>
-
-
-        {/* NEW VERSION */}
-
-        <form
-          className=
-            "overview-panel version-form"
-
-          onSubmit={
-            uploadVersion
-          }
-        >
-
-          <h2>
-
-            Upload Revision
-
-          </h2>
-
-
-          <label>
-
-            Revision File
-
-            <input
-              type="file"
-
-              onChange={
-                event =>
-                  setFile(
-                    event
-                      .target
-                      .files?.[0]
-                  )
-              }
-            />
-
-          </label>
-
-
-          <label>
-
-            Change Reason
-
-            <input
-
-              value={
-                reason
-              }
-
-              onChange={
-                event =>
-                  setReason(
-                    event
-                      .target
-                      .value
-                  )
-              }
-
-              placeholder=
-                "Updated commercial terms"
-
-            />
-
-          </label>
-
-
-          <label>
-
-            Comments
-
-            <textarea
-
-              rows="5"
-
-              value={
-                comments
-              }
-
-              onChange={
-                event =>
-                  setComments(
-                    event
-                      .target
-                      .value
-                  )
-              }
-
-              placeholder=
-                "Describe changes..."
-
-            />
-
-          </label>
-
-
-          <button
-            className=
-              "doc-btn doc-btn-dark"
-
-            disabled={
-              !file ||
-              !documentId
-            }
-          >
-
-            Upload New Version
-
-          </button>
-
-        </form>
-
+        )}
       </div>
-
     </div>
   );
 }

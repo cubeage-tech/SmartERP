@@ -13,26 +13,26 @@ import java.util.Set;
 @Setter
 public class CreateUserRequest {
 
-    @NotBlank(message = "Name is required")
+    @NotBlank(message = "Full name is required")
     private String name;
 
-    @Email(message = "Enter valid email")
+    @Email(message = "Enter a valid email")
     @NotBlank(message = "Email is required")
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(
-            min = 8,
-            message = "Password must contain at least 8 characters"
-    )
+    @Size(min = 8, message = "Password must contain at least 8 characters")
     private String password;
 
-    @NotNull(message = "Tenant ID is required")
-    private Long tenantId;
+    @NotNull(message = "Please select a role")
+    private Long roleId;
+
+    @NotBlank(message = "Position is required")
+    private String position;
+
+    private Boolean active = true;
 
     private Long branchId;
 
     private Long departmentId;
-
-    private Set<Long> roleIds;
 }

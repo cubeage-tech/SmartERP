@@ -76,7 +76,7 @@ const Pricing = () => {
         width: "100%",
         background: "#0b0d0c",
         color: "#f1eee7",
-        padding: "70px 5vw 35px",
+        padding: "70px 40px 35px",
         boxSizing: "border-box",
         fontFamily: 'Georgia, "Times New Roman", serif',
       }}

@@ -1,4 +1,8 @@
 package com.cubeage.erp.reports.dto.dashboard;
 
-public class RevenueTrendResponse {
-}
+import java.math.BigDecimal;
+
+public record RevenueTrendResponse(
+    String name,
+    BigDecimal value
+) {}

@@ -8,9 +8,9 @@ import java.util.Optional;
 
 public interface DocumentVersionRepository extends JpaRepository<DocumentVersion, Long> {
 
-    List<DocumentVersion> findByDocument_IdOrderByVersionNumberDesc(Long documentId);
+    List<DocumentVersion> findByDocument_IdAndTenantIdOrderByVersionNumberDesc(Long documentId, Long tenantId);
 
-    Optional<DocumentVersion> findByIdAndDocument_Id(Long id, Long documentId);
+    Optional<DocumentVersion> findByIdAndDocument_IdAndTenantId(Long id, Long documentId, Long tenantId);
 
-    Optional<DocumentVersion> findTopByDocument_IdOrderByVersionNumberDesc(Long documentId);
+    Optional<DocumentVersion> findTopByDocument_IdAndTenantIdOrderByVersionNumberDesc(Long documentId, Long tenantId);
 }

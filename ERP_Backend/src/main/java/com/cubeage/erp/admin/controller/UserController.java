@@ -1,120 +1,80 @@
 package com.cubeage.erp.admin.controller;
 
 import com.cubeage.erp.admin.dto.CreateUserRequest;
+import com.cubeage.erp.admin.dto.UpdateUserRequest;
 import com.cubeage.erp.admin.dto.UserResponse;
 import com.cubeage.erp.admin.service.UserService;
-
+import com.cubeage.erp.security.SecurityUtils;
 import jakarta.validation.Valid;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.security.access.prepost.PreAuthorize;
-
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Set;
 
 @RestController
-@RequestMapping(
-        "/api/v1/admin/users"
-)
+@RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
-@PreAuthorize(
-        "hasRole('TENANT_ADMIN')"
-)
+@PreAuthorize("hasRole('TENANT_ADMIN')")
 public class UserController {
 
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<UserResponse>
-    createUser(
-            @Valid
-            @RequestBody
-            CreateUserRequest request
+    public ResponseEntity<UserResponse> createUser(
+            @Valid @RequestBody CreateUserRequest request
     ) {
+        Long tenantId = SecurityUtils.currentTenantId();
 
         return ResponseEntity
-                .status(
-                        HttpStatus.CREATED
-                )
-                .body(
-                        userService
-                                .createUser(
-                                        request
-                                )
-                );
+                .status(HttpStatus.CREATED)
+                .body(userService.createUser(tenantId, request));
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponse>>
-    getUsers(
-            @RequestParam Long tenantId
-    ) {
+    public ResponseEntity<List<UserResponse>> getUsers() {
+        Long tenantId = SecurityUtils.currentTenantId();
 
-        return ResponseEntity.ok(
-                userService
-                        .getAllUsers(
-                                tenantId
-                        )
-        );
+        return ResponseEntity.ok(userService.getAllUsers(tenantId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse>
-    getUser(
-            @PathVariable Long id,
-            @RequestParam Long tenantId
-    ) {
+    public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
+        Long tenantId = SecurityUtils.currentTenantId();
 
-        return ResponseEntity.ok(
-                userService.getUser(
-                        id,
-                        tenantId
-                )
-        );
+        return ResponseEntity.ok(userService.getUser(id, tenantId));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUserRequest request
+    ) {
+        Long tenantId = SecurityUtils.currentTenantId();
+
+        return ResponseEntity.ok(userService.updateUser(id, tenantId, request));
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<UserResponse>
-    changeStatus(
+    public ResponseEntity<UserResponse> changeStatus(
             @PathVariable Long id,
-
-            @RequestParam Long tenantId,
-
             @RequestParam Boolean active
     ) {
+        Long tenantId = SecurityUtils.currentTenantId();
 
         return ResponseEntity.ok(
-                userService.changeStatus(
-                        id,
-                        tenantId,
-                        active
-                )
+                userService.changeStatus(id, tenantId, active)
         );
     }
 
-    @PutMapping("/{id}/roles")
-    public ResponseEntity<UserResponse>
-    assignRoles(
-            @PathVariable Long id,
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        Long tenantId = SecurityUtils.currentTenantId();
 
-            @RequestParam Long tenantId,
+        userService.deleteUser(id, tenantId);
 
-            @RequestBody
-            Set<Long> roleIds
-    ) {
-
-        return ResponseEntity.ok(
-                userService.assignRoles(
-                        id,
-                        tenantId,
-                        roleIds
-                )
-        );
+        return ResponseEntity.noContent().build();
     }
 }

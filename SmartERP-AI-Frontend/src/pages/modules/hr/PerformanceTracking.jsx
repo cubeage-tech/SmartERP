@@ -1,20 +1,5 @@
-import React from "react";
-
-const employees = [
-    ["AM", "Arjun Mehta", "Managing Director", 5, "ON TRACK"],
-    ["RS", "Rahul Sharma", "Finance Manager", 4, "ON TRACK"],
-    ["AS", "Ananya Singh", "Sales Manager", 5, "ON TRACK"],
-    ["DR", "Deepika Rao", "HR Manager", 4, "AT RISK"],
-    ["VJ", "Vikram Joshi", "Ops Manager", 5, "AT RISK"],
-];
-
-const scores = [
-    ["Finance", "4.6", "92%"],
-    ["Sales", "4.2", "84%"],
-    ["Operations", "3.9", "78%"],
-    ["HR", "4.5", "90%"],
-    ["IT", "4.1", "82%"],
-];
+import React, { useState, useEffect } from "react";
+import hrApi from "./hrApiClient";
 
 function RatingDots({ rating }) {
     return (
@@ -29,7 +14,7 @@ function RatingDots({ rating }) {
                         w-3
                         rounded-[4px]
                         ${
-                            dot <= rating
+                            dot <= (rating || 0)
                                 ? "bg-[#9caf8d]"
                                 : "bg-[#e7e6df]"
                         }
@@ -43,6 +28,31 @@ function RatingDots({ rating }) {
 }
 
 export default function PerformanceTracking() {
+    const [performanceData, setPerformanceData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        setLoading(true);
+        hrApi.getPerformance()
+            .then((res) => {
+                setPerformanceData(res.data);
+                setError(null);
+            })
+            .catch((err) => {
+                console.error("Failed to load performance metrics:", err);
+                setError(err.message || "Failed to load performance metrics");
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, []);
+
+    const reviews = performanceData?.reviews || [];
+    const scores = performanceData?.departmentScores || [];
+    const reviewPeriod = performanceData?.reviewPeriod || "Q2 2026 Reviews";
+    const description = performanceData?.description || "Employee performance reviews";
+
     return (
         <div className="
             grid
@@ -66,7 +76,7 @@ export default function PerformanceTracking() {
                     text-[21px]
                     text-[#11130f]
                 ">
-                    Q2 2026 Reviews
+                    {loading ? "Loading Reviews..." : reviewPeriod}
                 </h2>
 
                 <p className="
@@ -75,112 +85,126 @@ export default function PerformanceTracking() {
                     text-[10px]
                     text-[#969e9a]
                 ">
-                    Employee performance reviews
+                    {loading ? "Fetching employee performance ratings..." : description}
                 </p>
 
+                {loading && (
+                    <div className="py-12 text-center font-mono text-[11px] text-[#969e9a]">
+                        Loading performance reviews from API...
+                    </div>
+                )}
 
-                <div className="mt-5">
+                {!loading && error && (
+                    <div className="py-12 text-center font-mono text-[11px] text-[#8a635b]">
+                        Error loading reviews: {error}
+                    </div>
+                )}
 
-                    {employees.map(
-                        (
-                            [
-                                initials,
-                                name,
-                                designation,
-                                rating,
-                                status,
-                            ],
-                            index
-                        ) => (
+                {!loading && !error && reviews.length === 0 && (
+                    <div className="py-12 text-center font-mono text-[11px] text-[#969e9a]">
+                        No performance reviews found in database.
+                    </div>
+                )}
 
-                            <div
-                                key={name}
-                                className={`
-                                    group
-                                    flex
-                                    items-center
-                                    gap-4
-                                    py-4
-                                    transition-all
-                                    duration-200
-                                    hover:bg-[#f1f1ec]
-                                    ${
-                                        index !== employees.length - 1
-                                            ? "border-b border-[#e8e6df]"
-                                            : ""
-                                    }
-                                `}
-                            >
+                {!loading && !error && reviews.length > 0 && (
+                    <div className="mt-5">
 
-                                <div className="
-                                    flex
-                                    h-9
-                                    w-9
-                                    shrink-0
-                                    items-center
-                                    justify-center
-                                    rounded-full
-                                    bg-[#f0f2ed]
-                                    text-[9px]
-                                    text-[#667061]
-                                ">
-                                    {initials}
-                                </div>
+                        {reviews.map((review, index) => {
+                            const initials = review.initials || (Array.isArray(review) ? review[0] : "EM");
+                            const name = review.name || review.employeeName || (Array.isArray(review) ? review[1] : "—");
+                            const designation = review.designation || (Array.isArray(review) ? review[2] : "—");
+                            const rating = review.rating != null ? review.rating : (Array.isArray(review) ? review[3] : 5);
+                            const status = review.status || (Array.isArray(review) ? review[4] : "ON TRACK");
 
-
-                                <div className="min-w-0 flex-1">
-
-                                    <p className="
-                                        truncate
-                                        text-[13px]
-                                        text-[#171916]
-                                    ">
-                                        {name}
-                                    </p>
-
-                                    <p className="
-                                        mt-1
-                                        truncate
-                                        font-mono
-                                        text-[9px]
-                                        text-[#a0a39e]
-                                    ">
-                                        {designation}
-                                    </p>
-
-                                </div>
-
-
-                                <RatingDots rating={rating} />
-
-
-                                <span
+                            return (
+                                <div
+                                    key={name || index}
                                     className={`
-                                        hidden
-                                        rounded-[10px]
-                                        px-3
-                                        py-1.5
-                                        font-mono
-                                        text-[8px]
-                                        tracking-[0.08em]
-                                        sm:inline-flex
-
+                                        group
+                                        flex
+                                        items-center
+                                        gap-4
+                                        py-4
+                                        transition-all
+                                        duration-200
+                                        hover:bg-[#f1f1ec]
                                         ${
-                                            status === "ON TRACK"
-                                                ? "bg-[#e3ebdf] text-[#53624f]"
-                                                : "bg-[#eee9dc] text-[#806f4d]"
+                                            index !== reviews.length - 1
+                                                ? "border-b border-[#e8e6df]"
+                                                : ""
                                         }
                                     `}
                                 >
-                                    {status}
-                                </span>
 
-                            </div>
+                                    <div className="
+                                        flex
+                                        h-9
+                                        w-9
+                                        shrink-0
+                                        items-center
+                                        justify-center
+                                        rounded-full
+                                        bg-[#f0f2ed]
+                                        text-[9px]
+                                        text-[#667061]
+                                    ">
+                                        {initials}
+                                    </div>
 
-                        )
-                    )}
 
-                </div>
+                                    <div className="min-w-0 flex-1">
+
+                                        <p className="
+                                            truncate
+                                            text-[13px]
+                                            text-[#171916]
+                                        ">
+                                            {name}
+                                        </p>
+
+                                        <p className="
+                                            mt-1
+                                            truncate
+                                            font-mono
+                                            text-[9px]
+                                            text-[#a0a39e]
+                                        ">
+                                            {designation}
+                                        </p>
+
+                                    </div>
+
+
+                                    <RatingDots rating={rating} />
+
+
+                                    <span
+                                        className={`
+                                            hidden
+                                            rounded-[10px]
+                                            px-3
+                                            py-1.5
+                                            font-mono
+                                            text-[8px]
+                                            tracking-[0.08em]
+                                            sm:inline-flex
+
+                                            ${
+                                                status === "ON TRACK"
+                                                    ? "bg-[#e3ebdf] text-[#53624f]"
+                                                    : "bg-[#eee9dc] text-[#806f4d]"
+                                            }
+                                        `}
+                                    >
+                                        {status}
+                                    </span>
+
+                                </div>
+                            );
+                        })}
+
+                    </div>
+                )}
 
             </section>
 
@@ -212,69 +236,84 @@ export default function PerformanceTracking() {
                     Average performance by department
                 </p>
 
+                {loading && (
+                    <div className="py-12 text-center font-mono text-[11px] text-[#969e9a]">
+                        Loading department performance scores...
+                    </div>
+                )}
 
-                <div className="mt-7 space-y-6">
+                {!loading && !error && scores.length === 0 && (
+                    <div className="py-12 text-center font-mono text-[11px] text-[#969e9a]">
+                        No department score metrics found.
+                    </div>
+                )}
 
-                    {scores.map(
-                        ([department, score, percentage]) => (
+                {!loading && scores.length > 0 && (
+                    <div className="mt-7 space-y-6">
 
-                            <div
-                                key={department}
-                                className="flex items-center gap-4"
-                            >
+                        {scores.map((scoreItem, index) => {
+                            const department = scoreItem.department || (Array.isArray(scoreItem) ? scoreItem[0] : "Department");
+                            const score = scoreItem.score || (Array.isArray(scoreItem) ? scoreItem[1] : "0.0");
+                            const percentage = scoreItem.percentage || (Array.isArray(scoreItem) ? scoreItem[2] : "0%");
 
-                                <div className="
-                                    w-[90px]
-                                    shrink-0
-                                    font-mono
-                                    text-[10px]
-                                    text-[#92968f]
-                                ">
-                                    {department}
+                            return (
+                                <div
+                                    key={department || index}
+                                    className="flex items-center gap-4"
+                                >
+
+                                    <div className="
+                                        w-[90px]
+                                        shrink-0
+                                        font-mono
+                                        text-[10px]
+                                        text-[#92968f]
+                                    ">
+                                        {department}
+                                    </div>
+
+
+                                    <div className="
+                                        h-[9px]
+                                        flex-1
+                                        overflow-hidden
+                                        rounded-full
+                                        bg-[#efeee9]
+                                    ">
+
+                                        <div
+                                            className="
+                                                h-full
+                                                rounded-full
+                                                bg-[#9caf8d]
+                                            "
+                                            style={{
+                                                width: percentage,
+                                            }}
+                                        />
+
+                                    </div>
+
+
+                                    <div className="
+                                        w-8
+                                        text-right
+                                        font-serif
+                                        text-[16px]
+                                        text-[#171916]
+                                    ">
+                                        {score}
+                                    </div>
+
                                 </div>
+                            );
+                        })}
 
-
-                                <div className="
-                                    h-[9px]
-                                    flex-1
-                                    overflow-hidden
-                                    rounded-full
-                                    bg-[#efeee9]
-                                ">
-
-                                    <div
-                                        className="
-                                            h-full
-                                            rounded-full
-                                            bg-[#9caf8d]
-                                        "
-                                        style={{
-                                            width: percentage,
-                                        }}
-                                    />
-
-                                </div>
-
-
-                                <div className="
-                                    w-8
-                                    text-right
-                                    font-serif
-                                    text-[16px]
-                                    text-[#171916]
-                                ">
-                                    {score}
-                                </div>
-
-                            </div>
-
-                        )
-                    )}
-
-                </div>
+                    </div>
+                )}
 
             </section>
 
         </div>
     );
-}
+}

@@ -25,7 +25,32 @@ const mockLogin = ({ email, password }) =>
   })
 
 const authService = {
-  login: mockLogin,
+
+  // added
+  login: async (payload) => {
+  const response = await apiService.post(
+    `${SERVER_URL}/auth/login`,
+    payload
+  );
+
+  const loginData = response.data.data;
+
+  return {
+    data: {
+      token: loginData.accessToken,
+      user: {
+        id: loginData.userId,
+        tenantId: loginData.tenantId,
+        name: loginData.name,
+        email: loginData.email,
+        role: loginData.role
+          ?.toLowerCase()
+          .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()), //added
+      },
+    },
+  };
+},
+
   signup: (payload) => apiService.post(`${SERVER_URL}/auth/signup`, payload),
   logout: () => apiService.post(`${SERVER_URL}/auth/logout`),
   forgotPassword: (email) => apiService.post(`${SERVER_URL}/auth/forgot-password`, { email }),

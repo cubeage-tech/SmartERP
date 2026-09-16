@@ -3,10 +3,8 @@ import { Outlet } from 'react-router-dom'
 
 const AuthLayout = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-10">
-      <div className="w-full max-w-md bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-        <Outlet />
-      </div>
+    <div className="min-h-screen w-full flex" style={{ background: '#1a1a1a' }}>
+      <Outlet />
     </div>
   )
 }

@@ -8,8 +8,13 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
-@Entity @Table(name="sales_invoices",uniqueConstraints=@UniqueConstraint(name="uk_sales_invoice_number",columnNames={"tenant_id","invoice_number"}))
-@Getter @Setter @Builder @NoArgsConstructor @AllArgsConstructor
+@Entity
+@Table(name="sales_invoices",uniqueConstraints=@UniqueConstraint(name="uk_sales_invoice_number",columnNames={"tenant_id","invoice_number"}))
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Invoice {
  @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;
  @Column(name="tenant_id",nullable=false) private Long tenantId;

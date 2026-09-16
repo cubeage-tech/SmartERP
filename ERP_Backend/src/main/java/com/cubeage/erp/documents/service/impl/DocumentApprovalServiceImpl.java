@@ -30,16 +30,16 @@ public class DocumentApprovalServiceImpl implements DocumentApprovalService {
 
     @Override
     public DocumentApprovalResponse create(
-            Long companyId,
+            Long tenantId,
             Long userId,
             String userName,
             DocumentApprovalRequest request
     ) {
-        Document document = documentRepository.findByIdAndCompanyId(request.documentId(), companyId)
+        Document document = documentRepository.findByIdAndTenantId(request.documentId(), tenantId)
                 .orElseThrow(() -> new DocumentNotFoundException(request.documentId()));
 
         DocumentApproval approval = DocumentApproval.builder()
-                .companyId(companyId)
+                .tenantId(tenantId)
                 .document(document)
                 .submittedByUserId(userId)
                 .submittedByName(userName)
@@ -58,9 +58,9 @@ public class DocumentApprovalServiceImpl implements DocumentApprovalService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DocumentApprovalResponse> getPending(Long companyId) {
+    public List<DocumentApprovalResponse> getPending(Long tenantId) {
         return approvalRepository
-                .findByCompanyIdAndStatusOrderByDueDateAsc(companyId, ApprovalStatus.PENDING)
+                .findByTenantIdAndStatusOrderByDueDateAsc(tenantId, ApprovalStatus.PENDING)
                 .stream()
                 .map(mapper::toApprovalResponse)
                 .toList();
@@ -68,10 +68,10 @@ public class DocumentApprovalServiceImpl implements DocumentApprovalService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DocumentApprovalResponse> getMyPending(Long companyId, Long userId) {
+    public List<DocumentApprovalResponse> getMyPending(Long tenantId, Long userId) {
         return approvalRepository
-                .findByCompanyIdAndApproverUserIdAndStatusOrderByDueDateAsc(
-                        companyId,
+                .findByTenantIdAndApproverUserIdAndStatusOrderByDueDateAsc(
+                        tenantId,
                         userId,
                         ApprovalStatus.PENDING
                 )
@@ -81,8 +81,8 @@ public class DocumentApprovalServiceImpl implements DocumentApprovalService {
     }
 
     @Override
-    public DocumentApprovalResponse approve(Long companyId, Long approvalId, String comment) {
-        DocumentApproval approval = getPendingApproval(companyId, approvalId);
+    public DocumentApprovalResponse approve(Long tenantId, Long approvalId, String comment) {
+        DocumentApproval approval = getPendingApproval(tenantId, approvalId);
 
         approval.setStatus(ApprovalStatus.APPROVED);
         approval.setComment(comment);
@@ -96,8 +96,8 @@ public class DocumentApprovalServiceImpl implements DocumentApprovalService {
     }
 
     @Override
-    public DocumentApprovalResponse reject(Long companyId, Long approvalId, String comment) {
-        DocumentApproval approval = getPendingApproval(companyId, approvalId);
+    public DocumentApprovalResponse reject(Long tenantId, Long approvalId, String comment) {
+        DocumentApproval approval = getPendingApproval(tenantId, approvalId);
 
         approval.setStatus(ApprovalStatus.REJECTED);
         approval.setComment(comment);
@@ -110,8 +110,8 @@ public class DocumentApprovalServiceImpl implements DocumentApprovalService {
         return mapper.toApprovalResponse(approvalRepository.save(approval));
     }
 
-    private DocumentApproval getPendingApproval(Long companyId, Long approvalId) {
-        DocumentApproval approval = approvalRepository.findByIdAndCompanyId(approvalId, companyId)
+    private DocumentApproval getPendingApproval(Long tenantId, Long approvalId) {
+        DocumentApproval approval = approvalRepository.findByIdAndTenantId(approvalId, tenantId)
                 .orElseThrow(() -> new NoSuchElementException("Document approval not found: " + approvalId));
 
         if (approval.getStatus() != ApprovalStatus.PENDING) {

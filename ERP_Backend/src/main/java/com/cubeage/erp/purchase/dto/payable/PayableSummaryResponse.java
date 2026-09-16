@@ -1,4 +1,11 @@
 package com.cubeage.erp.purchase.dto.payable;
 
-public class PayableSummaryResponse {
-}
+import java.math.BigDecimal;
+
+public record PayableSummaryResponse(
+        BigDecimal totalPayables,
+        BigDecimal overduePayables,
+        BigDecimal dueThisWeek,
+        long pendingCount,
+        String currency
+) {}

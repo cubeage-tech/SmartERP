@@ -1,4 +1,8 @@
 package com.cubeage.erp.reports.service;
 
-public class ReportExportService {
+import com.cubeage.erp.reports.dto.export.ReportExportRequest;
+import org.springframework.http.ResponseEntity;
+
+public interface ReportExportService {
+    ResponseEntity<byte[]> exportReport(Long tenantId, Long id, ReportExportRequest request);
 }

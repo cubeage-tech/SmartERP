@@ -12,37 +12,37 @@ import java.util.Optional;
 
 public interface OcrExtractionRepository extends JpaRepository<OcrExtraction, Long> {
 
-    Optional<OcrExtraction> findByDocument_IdAndCompanyId(Long documentId, Long companyId);
+    Optional<OcrExtraction> findByDocument_IdAndTenantId(Long documentId, Long tenantId);
 
-    List<OcrExtraction> findByCompanyIdOrderByProcessedAtDesc(Long companyId);
+    List<OcrExtraction> findByTenantIdOrderByProcessedAtDesc(Long tenantId);
 
-    long countByCompanyIdAndStatus(Long companyId, OcrStatus status);
+    long countByTenantIdAndStatus(Long tenantId, OcrStatus status);
 
-    long countByCompanyIdAndProcessedAtGreaterThanEqual(Long companyId, LocalDateTime start);
+    long countByTenantIdAndProcessedAtGreaterThanEqual(Long tenantId, LocalDateTime start);
 
-    long countByCompanyIdAndAutoPostedToGlTrue(Long companyId);
+    long countByTenantIdAndAutoPostedToGlTrue(Long tenantId);
 
-    long countByCompanyIdAndManualReviewRequiredTrue(Long companyId);
+    long countByTenantIdAndManualReviewRequiredTrue(Long tenantId);
 
     @Query("""
             select coalesce(avg(o.confidence), 0)
             from OcrExtraction o
-            where o.companyId = :companyId
+            where o.tenantId = :tenantId
               and o.status in :statuses
             """)
     Double averageConfidence(
-            @Param("companyId") Long companyId,
+            @Param("tenantId") Long tenantId,
             @Param("statuses") List<OcrStatus> statuses
     );
 
     @Query("""
             select count(o)
             from OcrExtraction o
-            where o.companyId = :companyId
+            where o.tenantId = :tenantId
               and o.status in :statuses
             """)
     long countIndexed(
-            @Param("companyId") Long companyId,
+            @Param("tenantId") Long tenantId,
             @Param("statuses") List<OcrStatus> statuses
     );
 }

@@ -1,14 +1,35 @@
-import React from "react";
-
-const attendance = [
-    ["Mon, 05 Aug", "09:02", "18:35", "9h 33m", "PRESENT"],
-    ["Tue, 06 Aug", "08:55", "18:10", "9h 15m", "PRESENT"],
-    ["Wed, 07 Aug", "09:18", "19:00", "9h 42m", "PRESENT"],
-    ["Thu, 08 Aug", "09:05", "-", "—", "PRESENT"],
-    ["Fri, 09 Aug", "-", "-", "—", "ABSENT"],
-];
+import React, { useEffect, useState } from "react";
+import hrApi from "./hrApiClient";
 
 export default function Attendance() {
+    const [attendanceRecords, setAttendanceRecords] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        setLoading(true);
+        hrApi.getAttendance()
+            .then((res) => {
+                setAttendanceRecords(Array.isArray(res.data) ? res.data : []);
+                setError(null);
+            })
+            .catch((err) => {
+                console.error("Failed to load attendance records:", err);
+                setError(err.message || "Failed to load attendance records");
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, []);
+
+    const rows = attendanceRecords.map((item) => [
+        item.date || item.formattedDate || (item.attendanceDate ? String(item.attendanceDate) : "—"),
+        item.checkIn || "-",
+        item.checkOut || "-",
+        item.hours || "—",
+        item.status || "PRESENT",
+    ]);
+
     return (
         <div className="w-full">
 
@@ -69,11 +90,32 @@ export default function Attendance() {
 
                         </div>
 
+                        {/* LOADING STATE */}
+                        {loading && (
+                            <div className="px-6 py-12 text-center font-mono text-[11px] text-[#969e9a]">
+                                Loading attendance log from API...
+                            </div>
+                        )}
 
-                        {attendance.map((row) => (
+                        {/* ERROR STATE */}
+                        {!loading && error && (
+                            <div className="px-6 py-12 text-center font-mono text-[11px] text-[#8a635b]">
+                                Error loading attendance: {error}
+                            </div>
+                        )}
+
+                        {/* EMPTY STATE */}
+                        {!loading && !error && rows.length === 0 && (
+                            <div className="px-6 py-12 text-center font-mono text-[11px] text-[#969e9a]">
+                                No attendance records found in database.
+                            </div>
+                        )}
+
+                        {/* ROWS */}
+                        {!loading && !error && rows.map((row, idx) => (
 
                             <div
-                                key={row[0]}
+                                key={idx}
                                 className="
                                     group
                                     grid
@@ -155,4 +197,4 @@ export default function Attendance() {
 
         </div>
     );
-}
+}

@@ -1,9 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
+import RoleDashboardService from "../../core/services/modules/roleDashboard.service";
 
 const SuperAdminDashboard = () => {
     const [period, setPeriod] = useState("6M");
     const [hoverIndex, setHoverIndex] = useState(null);
     const [animationStarted, setAnimationStarted] = useState(false);
+    const [dashboardData, setDashboardData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -13,48 +17,111 @@ const SuperAdminDashboard = () => {
         return () => clearTimeout(timer);
     }, []);
 
+    useEffect(() => {
+        const loadDashboard = async () => {
+            try {
+                setError("");
+
+                const response =
+                    await RoleDashboardService.getSuperAdminDashboard();
+
+                setDashboardData(response.data);
+            } catch (requestError) {
+                console.error(
+                    "Unable to load Super Admin dashboard:",
+                    requestError
+                );
+
+                setError(
+                    requestError?.response?.data?.message ||
+                    "Unable to load dashboard data."
+                );
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadDashboard();
+    }, []);
+
     /* =========================================================
        KPI DATA
     ========================================================= */
 
-    const kpis = [
+const formatAmount = (amount, currency = "INR") => {
+    const value = Number(amount || 0);
+
+    return new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 0,
+    }).format(value);
+};
+
+const revenueByCurrency =
+    dashboardData?.currentMonthRevenueByCurrency || {};
+
+const totalRevenueByCurrency =
+    dashboardData?.totalSubscriptionRevenueByCurrency || {};
+
+const primaryCurrency =
+    Object.keys(revenueByCurrency)[0] ||
+    Object.keys(totalRevenueByCurrency)[0] ||
+    "INR";
+
+const kpis = dashboardData
+    ? [
         {
-            label: "REVENUE MTD",
-            value: "₹48.6M",
-            change: "+12.4%",
+            label: "TOTAL TENANTS",
+            value: Number(
+                dashboardData.totalTenants || 0
+            ).toLocaleString("en-IN"),
+            change: `${dashboardData.activeTenants || 0} active`,
             positive: true,
         },
         {
-            label: "NET PROFIT",
-            value: "₹6.2M",
-            change: "+8.1%",
+            label: "TRIAL TENANTS",
+            value: Number(
+                dashboardData.trialTenants || 0
+            ).toLocaleString("en-IN"),
+            change: `${dashboardData.suspendedTenants || 0} suspended`,
+            positive: dashboardData.suspendedTenants === 0,
+        },
+        {
+            label: "ACTIVE USERS",
+            value: Number(
+                dashboardData.activeUsers || 0
+            ).toLocaleString("en-IN"),
+            change: "Across all tenants",
             positive: true,
         },
         {
-            label: "CASH POSITION",
-            value: "₹12.8M",
-            change: "+3.2%",
+            label: "ACTIVE SUBSCRIPTIONS",
+            value: Number(
+                dashboardData.activeSubscriptions || 0
+            ).toLocaleString("en-IN"),
+            change: "Currently valid",
             positive: true,
         },
         {
-            label: "90D FORECAST",
-            value: "₹61.4M",
-            change: "87% confidence",
+            label: "REVENUE THIS MONTH",
+            value: formatAmount(
+                revenueByCurrency[primaryCurrency],
+                primaryCurrency
+            ),
+            change: primaryCurrency,
             positive: true,
         },
         {
-            label: "OPEN ORDERS",
-            value: "1,284",
-            change: "+8.6%",
+            label: "ENABLED MODULES",
+            value: Number(
+                dashboardData.enabledModules || 0
+            ).toLocaleString("en-IN"),
+            change: "Tenant module assignments",
             positive: true,
         },
-        {
-            label: "INVENTORY HEALTH",
-            value: "94.2%",
-            change: "-0.8%",
-            positive: false,
-        },
-    ];
+    ]
+    : [];
 
     /* =========================================================
        REVENUE DATA
@@ -257,21 +324,22 @@ const SuperAdminDashboard = () => {
         },
     ];
 
-    /* =========================================================
-       QUICK ACTIONS
-    ========================================================= */
-
-    const quickActions = [
-        "New User",
-        "Create Workflow",
-        "View Reports",
-        "System Settings",
-    ];
-
     return (
         <div className="min-h-screen w-full bg-[#f6f5f1] px-4 py-6 font-mono text-[#11130f] sm:px-6 lg:px-7">
 
             <div className="mx-auto w-full max-w-[1540px]">
+
+                {loading && (
+    <div className="rounded-[16px] border border-[#e3e1db] bg-white px-5 py-4 text-sm text-[#6d7069]">
+        Loading platform dashboard…
+    </div>
+)}
+
+{error && (
+    <div className="mb-6 rounded-[16px] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+        {error}
+    </div>
+)}
 
                 {/* =====================================================
                     HEADER
@@ -309,17 +377,6 @@ const SuperAdminDashboard = () => {
                             AI ACTIVE
 
                         </div>
-
-
-                        <button
-                            type="button"
-                            onClick={() =>
-                                alert("Quick Action opened")
-                            }
-                            className="h-[43px] flex-1 rounded-[14px] bg-[#151713] px-5 text-[11px] tracking-[1px] text-white transition-all duration-200 hover:-translate-y-[2px] hover:bg-[#252820] active:translate-y-0 sm:flex-none"
-                        >
-                            + QUICK ACTION
-                        </button>
 
                     </div>
 
@@ -655,7 +712,7 @@ const SuperAdminDashboard = () => {
 
 
                 {/* =====================================================
-                    PENDING APPROVALS + QUICK ACTIONS
+                    PENDING APPROVALS
                 ===================================================== */}
 
                 <section className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,3.2fr)_minmax(290px,1fr)]">
@@ -713,55 +770,6 @@ const SuperAdminDashboard = () => {
 
                             )
                         )}
-
-                    </div>
-
-
-                    {/* =================================================
-                        QUICK ACTIONS
-                    ================================================= */}
-
-                    <div className="overflow-hidden rounded-[20px] border border-[#e2e0da] bg-white">
-
-                        <div className="flex min-h-[70px] items-center border-b border-[#e6e4de] px-5">
-
-                            <h2 className="font-serif text-[20px] font-normal">
-                                Quick Actions
-                            </h2>
-
-                        </div>
-
-
-                        <div className="flex flex-col gap-2.5 p-5">
-
-                            {quickActions.map(
-                                (action, index) => (
-
-                                    <button
-                                        key={index}
-                                        type="button"
-                                        onClick={() =>
-                                            alert(
-                                                `${action} clicked`
-                                            )
-                                        }
-                                        className="flex h-[49px] w-full items-center justify-between rounded-[15px] border border-[#e1dfd8] bg-white px-4 text-left text-[11px] text-[#777a73] transition-all duration-200 hover:translate-x-1 hover:border-[#cfcfc7] hover:bg-[#fafaf7]"
-                                    >
-
-                                        <span>
-                                            {action}
-                                        </span>
-
-                                        <span className="text-[14px] text-[#aaa9a1]">
-                                            →
-                                        </span>
-
-                                    </button>
-
-                                )
-                            )}
-
-                        </div>
 
                     </div>
 

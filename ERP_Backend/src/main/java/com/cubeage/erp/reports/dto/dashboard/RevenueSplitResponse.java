@@ -1,4 +1,8 @@
 package com.cubeage.erp.reports.dto.dashboard;
 
-public class RevenueSplitResponse {
-}
+import java.math.BigDecimal;
+
+public record RevenueSplitResponse(
+    String name,
+    BigDecimal value
+) {}

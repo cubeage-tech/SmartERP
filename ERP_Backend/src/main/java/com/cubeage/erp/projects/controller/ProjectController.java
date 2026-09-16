@@ -36,6 +36,15 @@ public class ProjectController {
         return service.update(tenantId, id, request);
     }
 
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAnyRole('TENANT_ADMIN','PROJECT_MANAGER')")
+    public void delete(
+            @RequestHeader("X-Tenant-Id") Long tenantId,
+            @PathVariable Long id) {
+        service.delete(tenantId, id);
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ProjectResponse get(

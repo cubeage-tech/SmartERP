@@ -1,4 +1,7 @@
 package com.cubeage.erp.manufacturing.repository;
 
-public interface BomItemRepository {
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface BomItemRepository{
 }

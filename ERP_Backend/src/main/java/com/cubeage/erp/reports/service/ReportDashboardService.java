@@ -1,4 +1,7 @@
 package com.cubeage.erp.reports.service;
 
-public class ReportDashboardService {
+import com.cubeage.erp.reports.dto.dashboard.ReportDashboardResponse;
+
+public interface ReportDashboardService {
+    ReportDashboardResponse getDashboardData(Long tenantId);
 }

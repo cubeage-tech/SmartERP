@@ -1,5 +1,6 @@
 package com.cubeage.erp.documents.service;
 
+import com.cubeage.erp.documents.dto.document.CreateDocumentRequest;
 import com.cubeage.erp.documents.dto.document.DocumentResponse;
 import com.cubeage.erp.documents.dto.document.DocumentSearchRequest;
 import com.cubeage.erp.documents.dto.document.UpdateDocumentRequest;
@@ -13,32 +14,31 @@ import java.util.List;
 public interface DocumentService {
 
     DocumentResponse upload(
-            Long companyId,
+            Long tenantId,
             Long userId,
             String userName,
             MultipartFile file,
-            String title,
-            DocumentType type,
-            String tags,
-            Boolean ocrEnabled
+            CreateDocumentRequest request
     );
 
-    List<DocumentResponse> getAll(Long companyId, String search, DocumentType type);
+    List<DocumentResponse> getAll(Long tenantId, String search, DocumentType type, String category);
 
-    List<DocumentResponse> getMyUploads(Long companyId, Long userId);
+    List<DocumentResponse> getMyUploads(Long tenantId, Long userId);
 
-    List<DocumentResponse> search(Long companyId, DocumentSearchRequest request);
+    List<DocumentResponse> search(Long tenantId, DocumentSearchRequest request);
 
-    DocumentResponse getById(Long companyId, Long id);
+    DocumentResponse getById(Long tenantId, Long id);
 
-    DocumentResponse update(Long companyId, Long id, UpdateDocumentRequest request);
+    DocumentResponse update(Long tenantId, Long id, UpdateDocumentRequest request);
 
-    Resource download(Long companyId, Long id);
+    void delete(Long tenantId, Long id);
 
-    List<VersionResponse> getVersions(Long companyId, Long documentId);
+    Resource download(Long tenantId, Long id);
+
+    List<VersionResponse> getVersions(Long tenantId, Long documentId);
 
     VersionResponse uploadVersion(
-            Long companyId,
+            Long tenantId,
             Long userId,
             String userName,
             Long documentId,
@@ -47,9 +47,9 @@ public interface DocumentService {
             String comments
     );
 
-    VersionResponse restoreVersion(Long companyId, Long documentId, Long versionId);
+    VersionResponse restoreVersion(Long tenantId, Long documentId, Long versionId);
 
-    Resource downloadVersion(Long companyId, Long documentId, Long versionId);
+    Resource downloadVersion(Long tenantId, Long documentId, Long versionId);
 
     record VersionResponse(
             Long id,

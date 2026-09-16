@@ -1,4 +1,39 @@
 package com.cubeage.erp.reports.dto.custom;
 
-public class CustomReportResponse {
-}
+import com.cubeage.erp.reports.enums.ReportCategory;
+import com.cubeage.erp.reports.enums.ReportStatus;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+public record CustomReportResponse(
+    Long id,
+    String name,
+    ReportCategory module,
+    String reportType,
+    String description,
+    String visibility,
+    String createdBy,
+    LocalDateTime createdAt,
+    String dataSource,
+    String primaryTable,
+    List<String> selectedFields,
+    List<CustomReportRequest.FilterRow> filters,
+    String matchType,
+    String dateField,
+    String dateRange,
+    LocalDate fromDate,
+    LocalDate toDate,
+    List<String> groupBy,
+    String sortBy,
+    String sortDir,
+    List<CustomReportRequest.CalculationRow> calculations,
+    String vizType,
+    boolean kpiEnabled,
+    List<CustomReportRequest.KpiRow> kpis,
+    boolean schedEnabled,
+    CustomReportRequest.ExportFormatSettings exportFormats,
+    CustomReportRequest.ExportIncludeSettings exportIncludes,
+    List<String> sharedUsers,
+    ReportStatus status
+) {}

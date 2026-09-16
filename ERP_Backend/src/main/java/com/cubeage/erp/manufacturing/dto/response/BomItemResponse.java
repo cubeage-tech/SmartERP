@@ -1,4 +1,12 @@
 package com.cubeage.erp.manufacturing.dto.response;
 
-public class BomItemResponse {
-}
+import java.math.BigDecimal;
+
+public record BomItemResponse(
+        Long id,
+        Long productId,
+        String description,
+        BigDecimal quantity,
+        BigDecimal unitCost,
+        BigDecimal lineTotal
+) {}

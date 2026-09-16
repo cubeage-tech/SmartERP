@@ -8,6 +8,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,7 +27,7 @@ public class DocumentStorageServiceImpl implements DocumentStorageService {
     }
 
     @Override
-    public StoredFile store(Long companyId, MultipartFile file) {
+    public StoredFile store(Long tenantId, MultipartFile file) {
         try {
             if (file == null || file.isEmpty()) {
                 throw new DocumentUploadException("Document file is required");
@@ -39,12 +40,12 @@ public class DocumentStorageServiceImpl implements DocumentStorageService {
             String clean = original.replaceAll("[^a-zA-Z0-9._-]", "_");
             String stored = UUID.randomUUID() + "_" + clean;
 
-            Path companyDirectory = root.resolve(companyId.toString());
-            Files.createDirectories(companyDirectory);
+            Path tenantDirectory = root.resolve(String.valueOf(tenantId));
+            Files.createDirectories(tenantDirectory);
 
-            Path target = companyDirectory.resolve(stored).normalize();
+            Path target = tenantDirectory.resolve(stored).normalize();
 
-            if (!target.startsWith(companyDirectory)) {
+            if (!target.startsWith(tenantDirectory)) {
                 throw new DocumentUploadException("Invalid storage path");
             }
 
@@ -79,6 +80,18 @@ public class DocumentStorageServiceImpl implements DocumentStorageService {
             throw e;
         } catch (Exception e) {
             throw new DocumentUploadException("Unable to load document", e);
+        }
+    }
+
+    @Override
+    public void delete(String storagePath) {
+        if (storagePath == null || storagePath.isBlank()) return;
+        try {
+            Path target = Paths.get(storagePath).normalize();
+            if (target.startsWith(root)) {
+                Files.deleteIfExists(target);
+            }
+        } catch (IOException ignored) {
         }
     }
 }

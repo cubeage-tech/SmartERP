@@ -30,8 +30,8 @@ public class GlobalExceptionHandler {
         return problem(HttpStatus.LOCKED, exception.getMessage());
     }
 
-    @ExceptionHandler(TenantLimitExceededException.class)
-    ResponseEntity<ProblemDetail> limit(TenantLimitExceededException exception) {
+    @ExceptionHandler({TenantLimitExceededException.class, DuplicateResourceException.class})
+    ResponseEntity<ProblemDetail> conflict(RuntimeException exception) {
         return problem(HttpStatus.CONFLICT, exception.getMessage());
     }
 

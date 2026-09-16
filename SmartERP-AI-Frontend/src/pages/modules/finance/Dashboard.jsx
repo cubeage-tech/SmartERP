@@ -1,17 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 import ProfitLoss from "./ProfitLoss";
+import BalanceSheet from "./BalanceSheet";
+import JournalEntries from "./JournalEntries";
+import ExpenseTracking from "./ExpenseTracking";
+import TaxManagement from "./TaxManagement";
 import GeneralLedger from "./GeneralLedger";
 import CashFlow from "./CashFlow";
+import ChartOfAccounts from "./ChartOfAccounts";
 import Alerts from "./Alerts";
+import JournalEntryModal from "./JournalEntryModal";
+import financeService from "../../../core/services/modules/finance.service";
 
 const Dashboard = () => {
     const [activeSection, setActiveSection] = useState("pnl");
+    const [journalModalOpen, setJournalModalOpen] = useState(false);
+    const [summary, setSummary] = useState(null);
+    const [summaryLoading, setSummaryLoading] = useState(true);
+    const [summaryError, setSummaryError] = useState("");
+    const [topAlert, setTopAlert] = useState(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const navigation = [
         {
             id: "pnl",
             label: "P&L"
+        },
+        {
+            id: "balancesheet",
+            label: "BALANCE SHEET"
+        },
+        {
+            id: "journals",
+            label: "JOURNALS"
+        },
+        {
+            id: "expenses",
+            label: "EXPENSES"
+        },
+        {
+            id: "tax",
+            label: "TAX & GST"
         },
         {
             id: "ledger",
@@ -22,36 +51,83 @@ const Dashboard = () => {
             label: "CASH FLOW"
         },
         {
+            id: "accounts",
+            label: "CHART OF ACCOUNTS"
+        },
+        {
             id: "alerts",
             label: "ALERTS"
         }
     ];
 
+    const fetchDashboardData = useCallback(async () => {
+        setSummaryLoading(true);
+        setSummaryError("");
+        try {
+            const [summaryData, alertsData] = await Promise.allSettled([
+                financeService.getDashboardSummary(),
+                financeService.getActiveAlerts(),
+            ]);
+
+            if (summaryData.status === "fulfilled") {
+                setSummary(summaryData.value);
+            } else {
+                setSummaryError(summaryData.reason?.response?.data?.message || "Failed to load summary");
+            }
+
+            if (alertsData.status === "fulfilled" && Array.isArray(alertsData.value) && alertsData.value.length > 0) {
+                setTopAlert(alertsData.value[0]);
+            } else {
+                setTopAlert(null);
+            }
+        } catch (err) {
+            setSummaryError(err?.response?.data?.message || err?.message || "Connection error");
+        } finally {
+            setSummaryLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData, refreshKey]);
+
+    const handleJournalCreated = () => {
+        setRefreshKey((k) => k + 1);
+    };
+
     const handleSectionChange = (section) => {
         setActiveSection(section);
-
-        // Move to the beginning of the Finance content
         window.scrollTo({
             top: 0,
             behavior: "smooth"
         });
     };
 
+    const fmtCurrency = (val) => {
+        const num = Number(val || 0);
+        return "₹" + num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+
     const renderSection = () => {
         switch (activeSection) {
-
             case "pnl":
                 return <ProfitLoss />;
-
+            case "balancesheet":
+                return <BalanceSheet key={refreshKey} />;
+            case "journals":
+                return <JournalEntries key={refreshKey} />;
+            case "expenses":
+                return <ExpenseTracking key={refreshKey} />;
+            case "tax":
+                return <TaxManagement key={refreshKey} />;
             case "ledger":
-                return <GeneralLedger />;
-
+                return <GeneralLedger key={refreshKey} />;
             case "cashflow":
                 return <CashFlow />;
-
+            case "accounts":
+                return <ChartOfAccounts key={refreshKey} />;
             case "alerts":
-                return <Alerts />;
-
+                return <Alerts key={refreshKey} onDismiss={() => setRefreshKey((k) => k + 1)} />;
             default:
                 return <ProfitLoss />;
         }
@@ -116,6 +192,7 @@ const Dashboard = () => {
 
 
                         <button
+                            onClick={() => setJournalModalOpen(true)}
                             className="
                                 rounded-[15px]
                                 bg-[#11130f]
@@ -140,6 +217,18 @@ const Dashboard = () => {
                     SUMMARY CARDS
                 ================================================== */}
 
+                {summaryError && (
+                    <div className="mt-6 flex items-center justify-between rounded-[16px] border border-[#f5c6c6] bg-[#fde8e8] px-5 py-3 text-[#a02020]">
+                        <p className="font-mono text-[12px]">⚠️ {summaryError}</p>
+                        <button
+                            onClick={fetchDashboardData}
+                            className="font-mono text-[11px] underline hover:no-underline"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                )}
+
                 <div className="
                     mt-10
                     grid
@@ -150,27 +239,27 @@ const Dashboard = () => {
                 ">
 
                     <SummaryCard
-                        amount="₹1.60 Cr"
-                        label="NET PROFIT YTD"
-                        description="↑ 18.4% vs last year"
+                        amount={summaryLoading ? "..." : fmtCurrency(summary?.totalDebits)}
+                        label="TOTAL DEBITS"
+                        description="Total debits from posted journals"
                     />
 
                     <SummaryCard
-                        amount="₹1.42 Cr"
-                        label="REVENUE MTD"
-                        description="Vs target: ₹1.20 Cr"
+                        amount={summaryLoading ? "..." : fmtCurrency(summary?.totalCredits)}
+                        label="TOTAL CREDITS"
+                        description="Total credits from posted journals"
                     />
 
                     <SummaryCard
-                        amount="₹3.14 Cr"
-                        label="RECEIVABLES"
-                        description="12 invoices pending"
+                        amount={summaryLoading ? "..." : fmtCurrency(summary?.netMovement)}
+                        label="NET MOVEMENT"
+                        description="Credits minus debits"
                     />
 
                     <SummaryCard
-                        amount="₹1.20 Cr"
-                        label="PAYABLES"
-                        description="₹38L due this week"
+                        amount={summaryLoading ? "..." : String(summary?.journalEntries ?? 0)}
+                        label="JOURNAL ENTRIES"
+                        description="Total posted double-entry records"
                     />
 
                 </div>
@@ -218,8 +307,9 @@ const Dashboard = () => {
                             leading-relaxed
                             text-[#75483f]
                         ">
-                            High-priority alert: Duplicate vendor invoice
-                            detected: BILL-127 matches BILL-091 (Tata Steel)
+                            {topAlert
+                                ? `${topAlert.level || "HIGH"}: ${topAlert.title} (${topAlert.time || "Recent"})`
+                                : "All financial transactions and AI compliance checks are clear."}
                         </p>
 
                     </div>
@@ -304,9 +394,6 @@ const Dashboard = () => {
 
             {/* =====================================================
                 CONTENT AREA
-
-                The selected component is rendered HERE.
-                It does NOT navigate to another browser page.
             ====================================================== */}
 
             <div className="px-8 pb-10 pt-7">
@@ -314,6 +401,12 @@ const Dashboard = () => {
                 {renderSection()}
 
             </div>
+
+            <JournalEntryModal
+                open={journalModalOpen}
+                onClose={() => setJournalModalOpen(false)}
+                onSuccess={handleJournalCreated}
+            />
 
         </div>
     );

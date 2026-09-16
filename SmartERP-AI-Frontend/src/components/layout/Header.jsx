@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import useAuthStore from '../../store/slices/auth.store'
 import { formatRole } from '../../utils/formatRole'
+import { ROUTES } from '../../core/constants/routes.constant'
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -31,6 +32,23 @@ const SparkleIcon = () => (
 const Header = () => {
   const { user, logout } = useAuthStore()
   const [search, setSearch] = useState('')
+  const navigate = useNavigate()
+
+  // Map each role to its notifications route
+  const NOTIFICATION_ROUTES = {
+    superAdmin:         ROUTES.SUPER_ADMIN_NOTIFICATIONS,
+    admin:              ROUTES.ADMIN_NOTIFICATIONS,
+    financeManager:     ROUTES.FINANCE_MANAGER_NOTIFICATIONS,
+    salesManager:       ROUTES.SALES_MANAGER_NOTIFICATIONS,
+    hrManager:          ROUTES.HR_MANAGER_NOTIFICATIONS,
+    operationsManager:  ROUTES.OPERATIONS_MANAGER_NOTIFICATIONS,
+    employee:           ROUTES.EMPLOYEE_NOTIFICATIONS,
+  }
+
+  const handleBellClick = () => {
+    const path = NOTIFICATION_ROUTES[user?.role]
+    if (path) navigate(path)
+  }
 
   const initials = (user?.name || user?.email || 'U')
     .split(' ')
@@ -82,6 +100,7 @@ const Header = () => {
 
         {/* Notification bell */}
         <button
+          onClick={handleBellClick}
           className="relative w-8 h-8 flex items-center justify-center rounded-lg transition-colors hover:bg-gray-100"
           style={{ border: '1px solid #e2e2da', backgroundColor: '#f0f0ea' }}
         >

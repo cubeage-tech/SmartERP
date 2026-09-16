@@ -9,18 +9,18 @@ import java.util.Optional;
 
 public interface DocumentApprovalRepository extends JpaRepository<DocumentApproval, Long> {
 
-    Optional<DocumentApproval> findByIdAndCompanyId(Long id, Long companyId);
+    Optional<DocumentApproval> findByIdAndTenantId(Long id, Long tenantId);
 
-    List<DocumentApproval> findByCompanyIdAndStatusOrderByDueDateAsc(
-            Long companyId,
+    List<DocumentApproval> findByTenantIdAndStatusOrderByDueDateAsc(
+            Long tenantId,
             ApprovalStatus status
     );
 
-    List<DocumentApproval> findByCompanyIdAndApproverUserIdAndStatusOrderByDueDateAsc(
-            Long companyId,
+    List<DocumentApproval> findByTenantIdAndApproverUserIdAndStatusOrderByDueDateAsc(
+            Long tenantId,
             Long approverUserId,
             ApprovalStatus status
     );
 
-    long countByCompanyIdAndStatus(Long companyId, ApprovalStatus status);
+    long countByTenantIdAndStatus(Long tenantId, ApprovalStatus status);
 }

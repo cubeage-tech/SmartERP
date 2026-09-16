@@ -1,4 +1,12 @@
 package com.cubeage.erp.finance.dto.ledger;
 
-public class GeneralLedgerResponse {
-}
+import java.math.BigDecimal;
+import java.util.List;
+
+public record GeneralLedgerResponse(
+		List<GeneralLedgerEntryDto> entries,
+		BigDecimal totalDebit,
+		BigDecimal totalCredit,
+		BigDecimal netBalance,
+		int totalRecords
+) { }

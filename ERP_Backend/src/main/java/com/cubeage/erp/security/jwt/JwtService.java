@@ -64,11 +64,13 @@ public class JwtService {
     }
 
     public Long extractUserId(String token) {
-        return extractAllClaims(token).get("uid", Long.class);
+        Object val = extractAllClaims(token).get("uid");
+        return val instanceof Number ? ((Number) val).longValue() : null;
     }
 
     public Long extractTenantId(String token) {
-        return extractAllClaims(token).get("tenantId", Long.class);
+        Object val = extractAllClaims(token).get("tenantId");
+        return val instanceof Number ? ((Number) val).longValue() : null;
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> resolver) {

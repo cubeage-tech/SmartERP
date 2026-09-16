@@ -29,12 +29,12 @@ public class DocumentDashboardServiceImpl implements DocumentDashboardService {
     private double storageLimitGb;
 
     @Override
-    public DocumentDashboardResponse getDashboard(Long companyId) {
-        long totalDocuments = documentRepository.countByCompanyId(companyId);
+    public DocumentDashboardResponse getDashboard(Long tenantId) {
+        long totalDocuments = documentRepository.countByTenantId(tenantId);
 
         long documentsThisMonth = documentRepository
-                .countByCompanyIdAndCreatedAtGreaterThanEqual(
-                        companyId,
+                .countByTenantIdAndCreatedAtGreaterThanEqual(
+                        tenantId,
                         YearMonth.now().atDay(1).atStartOfDay()
                 );
 
@@ -44,16 +44,16 @@ public class DocumentDashboardServiceImpl implements DocumentDashboardService {
         );
 
         double ocrAccuracy = Optional.ofNullable(
-                ocrRepository.averageConfidence(companyId, indexedStatuses)
+                ocrRepository.averageConfidence(tenantId, indexedStatuses)
         ).orElse(0.0);
 
-        long ocrExtractedCount = ocrRepository.countIndexed(companyId, indexedStatuses);
+        long ocrExtractedCount = ocrRepository.countIndexed(tenantId, indexedStatuses);
 
         long pendingApprovalCount = approvalRepository
-                .countByCompanyIdAndStatus(companyId, ApprovalStatus.PENDING);
+                .countByTenantIdAndStatus(tenantId, ApprovalStatus.PENDING);
 
         String nearestApprovalDueDate = approvalRepository
-                .findByCompanyIdAndStatusOrderByDueDateAsc(companyId, ApprovalStatus.PENDING)
+                .findByTenantIdAndStatusOrderByDueDateAsc(tenantId, ApprovalStatus.PENDING)
                 .stream()
                 .filter(approval -> approval.getDueDate() != null)
                 .findFirst()
@@ -61,14 +61,14 @@ public class DocumentDashboardServiceImpl implements DocumentDashboardService {
                 .orElse(null);
 
         long bytes = Optional.ofNullable(
-                documentRepository.sumFileSizeByCompanyId(companyId)
+                documentRepository.sumFileSizeByTenantId(tenantId)
         ).orElse(0L);
 
         double storageUsedGb = bytes / 1024d / 1024d / 1024d;
         double storageRemainingGb = Math.max(0.0, storageLimitGb - storageUsedGb);
 
         long processingDocuments = ocrRepository
-                .countByCompanyIdAndStatus(companyId, OcrStatus.PROCESSING);
+                .countByTenantIdAndStatus(tenantId, OcrStatus.PROCESSING);
 
         return new DocumentDashboardResponse(
                 totalDocuments,

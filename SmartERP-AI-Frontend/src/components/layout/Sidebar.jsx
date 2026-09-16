@@ -25,8 +25,9 @@ const NAV = {
     { label: 'AI Assistant',       to: '/app/super-admin/ai' },
     { label: 'Settings',           to: '/app/super-admin/settings' },
   ],
-  admin: [
+  tenantAdmin: [
     { label: 'Dashboard',          to: '/app/admin/dashboard' },
+    { label: 'User Management',    to: '/app/admin/user-management' },
     { label: 'Company Management', to: '/app/admin/company' },
     { label: 'CRM',                to: '/app/admin/crm' },
     { label: 'Sales',              to: '/app/admin/sales' },
@@ -79,10 +80,16 @@ const NAV = {
     { label: 'AI Assistant',        to: '/app/operations-manager/ai' },
     { label: 'Reports & Analytics', to: '/app/operations-manager/reports' },
   ],
+  inventoryManager: [
+    { label: 'Dashboard',           to: '/app/inventory-manager/dashboard' },
+    { label: 'Inventory',           to: '/app/inventory-manager/inventory' },
+    { label: 'Documents',           to: '/app/inventory-manager/documents' },
+    { label: 'AI Assistant',        to: '/app/inventory-manager/ai' },
+  ],
   employee: [
-    { label: 'Dashboard',  to: '/app/employee/dashboard' },
-    { label: 'Projects',   to: '/app/employee/projects' },
-    { label: 'Documents',  to: '/app/employee/documents' },
+    { label: 'Dashboard',    to: '/app/employee/dashboard' },
+    { label: 'Projects',     to: '/app/employee/projects' },
+    { label: 'Documents',    to: '/app/employee/documents' },
     { label: 'AI Assistant', to: '/app/employee/ai' },
   ],
 }
@@ -91,6 +98,8 @@ const NAV = {
 
 const ICONS = {
   'Dashboard':          <GridIcon />,
+  'User Management': <UsersIcon />,
+  'Leave':              <CalendarIcon />,
   'Tenants':            <BuildingIcon />,
   'Subscriptions':      <CreditCardIcon />,
   'Platform Users':     <UsersIcon />,
@@ -119,6 +128,14 @@ function GridIcon() {
       <rect x="9" y="1" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
       <rect x="1" y="9" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
       <rect x="9" y="9" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.4"/>
+    </svg>
+  )
+}
+function CalendarIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+      <rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+      <path d="M2 6.5h12M5 1.5v3M11 1.5v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
     </svg>
   )
 }

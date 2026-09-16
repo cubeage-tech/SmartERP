@@ -1,14 +1,19 @@
 import React from "react";
+import useActiveCompany from "../../../core/hooks/useActiveCompany";
 
-const Overview = () => {
+const Overview = ({ company: providedCompany, dashboard: providedDashboard }) => {
+  const activeCompany = useActiveCompany(providedCompany?.id);
+  const company = providedCompany || activeCompany.company;
+  const dashboard = providedDashboard || activeCompany.dashboard;
   const companyDetails = [
-    ["Type", "Private Limited"],
-    ["Industry", "Manufacturing"],
-    ["Founded", "12 Apr 2010"],
-    ["Fiscal Year", "April – March"],
-    ["Currency", "INR (₹)"],
-    ["Timezone", "IST (UTC+5:30)"],
+    ["Type", company?.companyType || "—"],
+    ["Industry", company?.industry || "—"],
+    ["Founded", company?.foundedOn || "—"],
+    ["Fiscal Year", company?.financialYear || "—"],
+    ["Currency", company?.currency || "—"],
+    ["Timezone", company?.timezone || "—"],
   ];
+  const organization = dashboard?.organizationChart;
 
   return (
     <div className="overview-content">
@@ -31,7 +36,7 @@ const Overview = () => {
 
             <div className="director-box">
               <span>MANAGING DIRECTOR</span>
-              <strong>Arjun Mehta</strong>
+              <strong>{organization?.managingDirector || "Not assigned"}</strong>
             </div>
 
             <div className="vertical-line director-line"></div>
@@ -43,42 +48,15 @@ const Overview = () => {
             {/* Departments */}
 
             <div className="department-row">
-
-              <div className="department-wrapper">
-                <div className="vertical-small-line"></div>
-
-                <div className="department finance">
-                  <span>FINANCE</span>
-                  <strong>Rahul Sharma</strong>
+              {(organization?.departments || []).map((department) => (
+                <div className="department-wrapper" key={department.departmentId}>
+                  <div className="vertical-small-line"></div>
+                  <div className="department finance">
+                    <span>{department.department}</span>
+                    <strong>{department.head || "Not assigned"}</strong>
+                  </div>
                 </div>
-              </div>
-
-              <div className="department-wrapper">
-                <div className="vertical-small-line"></div>
-
-                <div className="department sales">
-                  <span>SALES</span>
-                  <strong>Ananya Singh</strong>
-                </div>
-              </div>
-
-              <div className="department-wrapper">
-                <div className="vertical-small-line"></div>
-
-                <div className="department operations">
-                  <span>OPERATIONS</span>
-                  <strong>Vikram Joshi</strong>
-                </div>
-              </div>
-
-              <div className="department-wrapper">
-                <div className="vertical-small-line"></div>
-
-                <div className="department hr">
-                  <span>HR</span>
-                  <strong>Deepika Rao</strong>
-                </div>
-              </div>
+              ))}
 
             </div>
           </div>
@@ -122,24 +100,24 @@ const Overview = () => {
             </div>
 
             <h2>
-              Business Plan
+              {dashboard?.plan || "Starter"} Plan
             </h2>
 
             <div className="subscription-info">
-              50 users&nbsp;&nbsp;·&nbsp;&nbsp;All 10 modules
+              {dashboard?.employees || 0} active users
             </div>
 
             <div className="usage-box">
 
               <div className="usage-header">
                 <span>Users used</span>
-                <span>38 / 50</span>
+                <span>{dashboard?.employees || 0}</span>
               </div>
 
               <div className="progress-bar">
                 <div
                   className="progress"
-                  style={{ width: "76%" }}
+                  style={{ width: `${Math.min(100, dashboard?.employees || 0)}%` }}
                 ></div>
               </div>
 

@@ -1,45 +1,44 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import RoleDashboardService from "../../core/services/modules/roleDashboard.service";
 import {
   Sparkles,
   ArrowUpRight,
-  ChevronRight,
 } from "lucide-react";
 
 /* =========================================================
    DATA
 ========================================================= */
 
-const stats = [
+const fallbackStats = [
+  {
+    label: "TOTAL USERS",
+    value: "0",
+    footer: "Loading unavailable",
+  },
   {
     label: "ACTIVE USERS",
-    value: "284",
-    footer: "+4 this month",
+    value: "0",
+    footer: "Loading unavailable",
   },
   {
-    label: "PENDING APPROVALS",
-    value: "7",
-    footer: "3 urgent",
-    danger: true,
+    label: "ROLES",
+    value: "0",
+    footer: "Loading unavailable",
   },
   {
-    label: "REVENUE MTD",
-    value: "₹48.6M",
-    footer: "+12.4%",
+    label: "PERMISSIONS",
+    value: "0",
+    footer: "Loading unavailable",
   },
   {
-    label: "SYSTEM HEALTH",
-    value: "99.9%",
-    footer: "All systems OK",
+    label: "BRANCHES",
+    value: "0",
+    footer: "Loading unavailable",
   },
   {
-    label: "OPEN WORKFLOWS",
-    value: "23",
-    footer: "+6 today",
-  },
-  {
-    label: "AI QUERIES TODAY",
-    value: "142",
-    footer: "+18%",
+    label: "DEPARTMENTS",
+    value: "0",
+    footer: "Loading unavailable",
   },
 ];
 
@@ -75,13 +74,6 @@ const initialApprovals = [
     urgent: false,
     status: "PENDING",
   },
-];
-
-const quickActions = [
-  "New User",
-  "Create Workflow",
-  "View Reports",
-  "System Settings",
 ];
 
 /* =========================================================
@@ -977,96 +969,87 @@ function PendingApprovals() {
 }
 
 /* =========================================================
-   QUICK ACTIONS
-========================================================= */
-
-function QuickActions() {
-  return (
-    <section
-      className="
-        overflow-hidden
-        rounded-[20px]
-        border
-        border-[#e3e0d9]
-        bg-white
-      "
-    >
-      <div
-        className="
-          border-b
-          border-[#e5e2db]
-          px-7
-          py-6
-        "
-      >
-        <h2
-          className="
-            font-serif
-            text-[22px]
-            leading-none
-            text-[#161815]
-          "
-        >
-          Quick Actions
-        </h2>
-      </div>
-
-      <div className="space-y-3 px-6 py-6">
-        {quickActions.map((action) => (
-          <button
-            key={action}
-            type="button"
-            className="
-              group
-              flex
-              w-full
-              items-center
-              justify-between
-              rounded-[15px]
-              border
-              border-[#e4e1da]
-              bg-white
-              px-4
-              py-4
-              text-left
-              font-sans
-              text-[13px]
-              text-[#777d78]
-              transition-all
-              duration-200
-              hover:-translate-y-[1px]
-              hover:border-[#d5d2ca]
-              hover:bg-[#f1f1ec]
-              hover:text-[#262a26]
-            "
-          >
-            <span>{action}</span>
-
-            <ChevronRight
-              size={14}
-              strokeWidth={1.6}
-              className="
-                text-[#b7bbb7]
-                transition-all
-                duration-200
-                group-hover:translate-x-1
-                group-hover:text-[#656b65]
-              "
-            />
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-/* =========================================================
    ADMIN DASHBOARD
 ========================================================= */
 
 export default function AdminDashboard() {
-  const [quickActionOpen, setQuickActionOpen] =
-    useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        setError("");
+
+        const response =
+          await RoleDashboardService.getAdminDashboard();
+
+        setDashboardData(response.data);
+      } catch (requestError) {
+        console.error(
+          "Unable to load Admin dashboard:",
+          requestError
+        );
+
+        setError(
+          requestError?.response?.data?.message ||
+          "Unable to load admin dashboard data."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboard();
+  }, []);
+
+  const stats = dashboardData
+    ? [
+        {
+          label: "TOTAL USERS",
+          value: Number(
+            dashboardData.totalUsers || 0
+          ).toLocaleString("en-IN"),
+          footer: "Users in this tenant",
+        },
+        {
+          label: "ACTIVE USERS",
+          value: Number(
+            dashboardData.activeUsers || 0
+          ).toLocaleString("en-IN"),
+          footer: "Enabled user accounts",
+        },
+        {
+          label: "ROLES",
+          value: Number(
+            dashboardData.totalRoles || 0
+          ).toLocaleString("en-IN"),
+          footer: "Configured access roles",
+        },
+        {
+          label: "PERMISSIONS",
+          value: Number(
+            dashboardData.totalPermissions || 0
+          ).toLocaleString("en-IN"),
+          footer: "Available permission types",
+        },
+        {
+          label: "BRANCHES",
+          value: Number(
+            dashboardData.totalBranches || 0
+          ).toLocaleString("en-IN"),
+          footer: "Configured branches",
+        },
+        {
+          label: "DEPARTMENTS",
+          value: Number(
+            dashboardData.totalDepartments || 0
+          ).toLocaleString("en-IN"),
+          footer: "Configured departments",
+        },
+      ]
+    : fallbackStats;
 
   return (
     <main
@@ -1081,6 +1064,18 @@ export default function AdminDashboard() {
       "
     >
       <div className="mx-auto w-full max-w-[1540px]">
+
+        {loading && (
+  <div className="rounded-[16px] border border-[#e3e0d9] bg-white px-5 py-4 text-sm text-[#6d7069]">
+    Loading admin dashboard…
+  </div>
+)}
+
+{error && (
+  <div className="mb-6 rounded-[16px] border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+    {error}
+  </div>
+)}
 
         {/* =====================================================
             HEADER
@@ -1175,101 +1170,7 @@ export default function AdminDashboard() {
 
               AI Active
             </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                setQuickActionOpen(
-                  (value) => !value
-                )
-              }
-              className="
-                group
-                flex
-                h-[43px]
-                items-center
-                gap-2
-                rounded-[14px]
-                bg-[#151714]
-                px-5
-                font-sans
-                text-[10px]
-                font-medium
-                uppercase
-                tracking-[0.08em]
-                text-white
-                transition-all
-                duration-200
-                hover:-translate-y-[1px]
-                hover:bg-[#292c27]
-                hover:shadow-[0_7px_18px_rgba(20,23,20,0.12)]
-              "
-            >
-              + Quick Action
-
-              <ArrowUpRight
-                size={12}
-                strokeWidth={1.7}
-                className="
-                  transition-transform
-                  duration-200
-                  group-hover:-translate-y-[1px]
-                  group-hover:translate-x-[1px]
-                "
-              />
-            </button>
-
-            {quickActionOpen && (
-              <div
-                className="
-                  absolute
-                  right-0
-                  top-[52px]
-                  z-30
-                  w-[215px]
-                  rounded-[16px]
-                  border
-                  border-[#e1ded7]
-                  bg-white
-                  p-2
-                  shadow-[0_14px_35px_rgba(20,24,20,0.12)]
-                "
-              >
-                {quickActions.map((action) => (
-                  <button
-                    key={action}
-                    type="button"
-                    onClick={() =>
-                      setQuickActionOpen(false)
-                    }
-                    className="
-                      flex
-                      w-full
-                      items-center
-                      justify-between
-                      rounded-[10px]
-                      px-3
-                      py-3
-                      text-left
-                      font-sans
-                      text-[10px]
-                      text-[#737a74]
-                      transition-colors
-                      duration-150
-                      hover:bg-[#f1f1ec]
-                      hover:text-[#222620]
-                    "
-                  >
-                    {action}
-
-                    <ChevronRight
-                      size={12}
-                      strokeWidth={1.6}
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
+                
           </div>
         </section>
 
@@ -1315,7 +1216,7 @@ export default function AdminDashboard() {
         </section>
 
         {/* =====================================================
-            APPROVALS + QUICK ACTIONS
+            APPROVALS
         ====================================================== */}
 
         <section
@@ -1328,8 +1229,6 @@ export default function AdminDashboard() {
           "
         >
           <PendingApprovals />
-
-          <QuickActions />
         </section>
 
       </div>

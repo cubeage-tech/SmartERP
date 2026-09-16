@@ -1,7 +1,11 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import CompanyManagementService from "../../../core/services/modules/companyManagement.service";
+import useActiveCompany from "../../../core/hooks/useActiveCompany";
 
-const ApprovalWorkflows = () => {
-  const workflows = [
+const ApprovalWorkflows = ({ companyId: providedCompanyId }) => {
+  const activeCompany = useActiveCompany(providedCompanyId);
+  const companyId = providedCompanyId || activeCompany.companyId;
+  const [workflows, setWorkflows] = useState([
     {
       title: "Purchase Order Approval",
       trigger: "Amount > ₹25,000",
@@ -38,10 +42,26 @@ const ApprovalWorkflows = () => {
       steps: ["Requestor", "Operations", "Finance", "MD"],
       status: "INACTIVE",
     },
-  ];
+  ]);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!companyId) {
+      setWorkflows([]);
+      return;
+    }
+    CompanyManagementService.getApprovalWorkflows(companyId)
+      .then(({ data }) => {
+        setWorkflows(data);
+        setError("");
+      })
+      .catch((requestError) => setError(requestError.response?.data?.detail || "Unable to load approval workflows."));
+  }, [companyId]);
 
   return (
     <div className="approval-content">
+
+      {(error || activeCompany.error) && <div className="approval-api-message">{error || activeCompany.error}</div>}
 
       {/* ================= WORKFLOW LIST ================= */}
 
@@ -108,6 +128,11 @@ const ApprovalWorkflows = () => {
 
         .approval-content {
           width: 100%;
+        }
+
+        .approval-api-message {
+          margin-bottom: 12px; padding: 10px 14px; border: 1px solid #dfd8c9;
+          border-radius: 10px; background: #fffaf0; color: #6b5b3e; font-size: 12px;
         }
 
         /* WORKFLOW LIST */

@@ -24,6 +24,7 @@ public class UserMapper {
                 .tenantId(user.getTenantId())
                 .name(user.getName())
                 .email(user.getEmail())
+                .position(user.getPosition())
                 .active(user.getActive())
 
                 .branchId(
